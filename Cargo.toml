@@ -1,0 +1,41 @@
+[package]
+name = "nalgebra-spacetime"
+version = "0.1.0"
+authors = ["Rouven Spreckels <n3vu0r@qu1x.org>"]
+edition = "2018"
+description = "Spacetime Extension for nalgebra"
+documentation = "https://docs.rs/nalgebra-spacetime"
+repository = "https://github.com/qu1x/nalgebra-spacetime"
+readme = "README.md"
+license = "BSD-3-Clause"
+keywords = [
+	"spacetime",
+	"lorentzian-space",
+	"minkowski-space",
+	"relativistic-physics",
+	"special-relativity",
+	"four-vector",
+]
+categories = [
+	"science",
+	"mathematics"
+]
+include = [
+	"src/**/*.rs",
+	"katex.html",
+	"Cargo.toml",
+	"README.md",
+	"RELEASES.md",
+	"LICENSE.md",
+]
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "katex.html" ]
+
+[badges]
+travis-ci = { repository = "qu1x/nalgebra-spacetime" }
+
+[dependencies]
+nalgebra = "0.21"
+num-traits = { version = "0.2", default-features = false }
+approx = { version = "0.3", default-features = false }

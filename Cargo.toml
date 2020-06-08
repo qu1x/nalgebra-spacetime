@@ -9,7 +9,6 @@ repository = "https://github.com/qu1x/nalgebra-spacetime"
 readme = "README.md"
 license = "BSD-3-Clause"
 keywords = [
-	"spacetime",
 	"lorentzian-space",
 	"minkowski-space",
 	"relativistic-physics",

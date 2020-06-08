@@ -139,8 +139,8 @@ where
 
 	/// Lorentzian matrix multiplication of degree-1/degree-2 tensors.
 	///
-	/// Equals `self.r_dual() * rhs`, the metric contraction of its *row* index
-	/// with `rhs`'s *column* index.
+	/// Equals `self.c_dual() * rhs`, the metric contraction of its *column*
+	/// index with `rhs`'s *row* index.
 	fn contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>)
 	-> MatrixMN<N, R, C2>
 	where
@@ -152,8 +152,8 @@ where
 
 	/// Same as `contr()` but with transposed tensor indices.
 	///
-	/// Equals `self.c_dual().tr_mul(rhs)`, the metric contraction of its
-	/// *transposed column* index with `rhs`'s *column* index.
+	/// Equals `self.r_dual().tr_mul(rhs)`, the metric contraction of its
+	/// *transposed row* index with `rhs`'s *row* index.
 	fn tr_contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>)
 	-> MatrixMN<N, C, C2>
 	where
@@ -446,7 +446,7 @@ where
 		ShapeConstraint: AreMultipliable<R, C, R2, C2>,
 		DefaultAllocator: Allocator<N, R, C2>,
 	{
-		self.r_dual() * rhs
+		self.c_dual() * rhs
 	}
 
 	#[inline]
@@ -459,7 +459,7 @@ where
 		ShapeConstraint: SameNumberOfRows<R, R2>,
 		DefaultAllocator: Allocator<N, C, C2>,
 	{
-		self.c_dual().tr_mul(rhs)
+		self.r_dual().tr_mul(rhs)
 	}
 
 	#[inline]

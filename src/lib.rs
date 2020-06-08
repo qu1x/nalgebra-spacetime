@@ -4,9 +4,9 @@
 //!
 //! # Present Features
 //!
-//!   * Minkowski space as $n$-dimensional `LorentzianMN` space.
-//!   * Raising/Lowering tensor indices, `dual()`/`r_dual()`/`c_dual()`.
-//!   * Metric contraction of degree-1/degree-2 tensors, `contr()`/`scalar()`.
+//!   * Minkowski space as n-dimensional `LorentzianMN` space.
+//!   * Raising/Lowering tensor indices: `dual()`/`r_dual()`/`c_dual()`.
+//!   * Metric contraction of degree-1/degree-2 tensors: `contr()`/`scalar()`.
 //!   * Spacetime `interval()` with `LightCone` depiction.
 //!   * Inertial `FrameN` of reference holding boost parameters.
 //!   * Lorentz boost as `new_boost()` matrix.
@@ -15,9 +15,10 @@
 //!
 //! # Future Features
 //!
-//!   * `Event4`/`Velocity4`/`Momentum4` equivalents of `Point4` and so on.
-//!   * Categorize `Rotation4` and `PureBoost4` as `Boost4` and so on.
+//!   * `Event4`/`Velocity4`/`Momentum4`/`...` equivalents of `Point4`/`...`.
+//!   * Categorize `Rotation4`/`PureBoost4`/`...` as `Boost4`/`...`.
 //!   * Wigner `rotation()` and `axis_angle()` of an already-composed `Boost4`.
+//!   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
 
 #[deny(missing_docs)]
 

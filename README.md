@@ -6,7 +6,7 @@ Spacetime Extension for [nalgebra]
 
 [![Build Status][]](https://travis-ci.org/qu1x/nalgebra-spacetime)
 [![Downloads][]](https://crates.io/crates/nalgebra-spacetime)
-[![Rust][]](https://blog.rust-lang.org/2019/04/11/Rust-1.34.0.html)
+[![Rust][]](https://www.rust-lang.org)
 [![Version][]](https://crates.io/crates/nalgebra-spacetime)
 [![Documentation][]](https://docs.rs/nalgebra-spacetime)
 [![License][]](https://opensource.org/licenses/BSD-3-Clause)
@@ -18,11 +18,13 @@ Spacetime Extension for [nalgebra]
 [Documentation]: https://docs.rs/nalgebra-spacetime/badge.svg
 [License]: https://img.shields.io/crates/l/nalgebra-spacetime.svg
 
+[API Documentation with KaTeX](https://docs.rs/nalgebra-spacetime)
+
 # Present Features
 
   * Minkowski space as n-dimensional `LorentzianMN` space.
-  * Raising/Lowering tensor indices, `dual()`/`r_dual()`/`c_dual()`.
-  * Metric contraction of degree-1/degree-2 tensors, `contr()`/`scalar()`.
+  * Raising/Lowering tensor indices: `dual()`/`r_dual()`/`c_dual()`.
+  * Metric contraction of degree-1/degree-2 tensors: `contr()`/`scalar()`.
   * Spacetime `interval()` with `LightCone` depiction.
   * Inertial `FrameN` of reference holding boost parameters.
   * Lorentz boost as `new_boost()` matrix.
@@ -31,9 +33,10 @@ Spacetime Extension for [nalgebra]
 
 # Future Features
 
-  * `Event4`/`Velocity4`/`Momentum4` equivalents of `Point4` and so on.
-  * Categorize `Rotation4` and `PureBoost4` as `Boost4` and so on.
+  * `Event4`/`Velocity4`/`Momentum4`/`...` equivalents of `Point4`/`...`.
+  * Categorize `Rotation4`/`PureBoost4`/`...` as `Boost4`/`...`.
   * Wigner `rotation()` and `axis_angle()` of an already-composed `Boost4`.
+  * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
 
 ## License
 

@@ -1,0 +1,2 @@
+[alias]
+"tex" = ["rustdoc", "--", "--html-in-header", "katex.html"]

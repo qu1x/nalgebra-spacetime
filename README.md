@@ -38,14 +38,15 @@ Spacetime Extension for [nalgebra]
   * Wigner `rotation()` and `axis_angle()` of an already-composed `Boost4`.
   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
 
-# Local API Documentation with KaTeX
+# Semi-Local Documentation Builds
 
 ```sh
 cargo tex
 cargo doc --open
 ```
 
-With `cargo tex` defined in [.cargo/config](.cargo/config).
+With `cargo tex` defined in [.cargo/config](.cargo/config). Note that navigating
+the documentation requires web access as KaTeX is embedded via CDN.
 
 ## License
 

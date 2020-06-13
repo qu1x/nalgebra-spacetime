@@ -326,7 +326,8 @@ where
 		ShapeConstraint: AreMultipliable<R, C, R, C> + DimEq<R, D>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
 
-	/// Boosts this degree-1 tensor to inertial `frame` of reference.
+	/// Boosts this degree-1 tensor $x^\mu$ to inertial `frame` of reference
+	/// along $\hat u$ with $\zeta$.
 	///
 	/// ```
 	/// use nalgebra::{Vector3, Vector4, Matrix4};
@@ -339,6 +340,8 @@ where
 	/// let time_dilation_factor = muon_lifetime[0] / muon_rest_lifetime[0];
 	/// assert_ulps_eq!((time_dilation_factor * 10.0).round() * 0.1, 10.2);
 	/// ```
+	///
+	/// See `boost_mut()` for further details.
 	fn boost<D>(&self, frame: &FrameN<N, D>) -> Self
 	where
 		R: DimName,
@@ -347,7 +350,23 @@ where
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
 
-	/// Boosts this degree-1 tensor to inertial `frame` of reference *in-place*.
+	/// $
+	/// \gdef \xu {(\vec x \cdot \hat u)}
+	/// $
+	/// Boosts this degree-1 tensor $x^\mu$ to inertial `frame` of reference
+	/// along $\hat u$ with $\zeta$ *in-place*.
+	///
+	/// $$
+	/// x^{\mu'} \equiv \begin{pmatrix}
+	/// x^{0'} \\\\
+	/// \vec x'
+	/// \end{pmatrix} = \begin{pmatrix}
+	/// x^0 \cosh \zeta - \xu \sinh \zeta \\\\
+	/// \vec x + (\xu (\cosh \zeta - 1) - x^0 \sinh \zeta) \hat u
+	/// \end{pmatrix}
+	/// $$
+	///
+	/// Equals relativistic velocity addition $v \oplus u$ in case $x \equiv v$.
 	fn boost_mut<D>(&mut self, frame: &FrameN<N, D>)
 	where
 		R: DimName,

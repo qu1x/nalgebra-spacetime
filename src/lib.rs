@@ -357,10 +357,10 @@ where
 	/// along $\hat u$ with $\zeta$ *in-place*.
 	///
 	/// $$
-	/// x^{\mu'} \equiv \begin{pmatrix}
-	/// x^{0'} \\\\
-	/// \vec x'
-	/// \end{pmatrix} = \begin{pmatrix}
+	/// \begin{pmatrix}
+	/// x^0 \\\\
+	/// \vec x
+	/// \end{pmatrix}' = \begin{pmatrix}
 	/// x^0 \cosh \zeta - \xu \sinh \zeta \\\\
 	/// \vec x + (\xu (\cosh \zeta - 1) - x^0 \sinh \zeta) \hat u
 	/// \end{pmatrix}

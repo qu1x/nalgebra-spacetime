@@ -18,7 +18,10 @@ Spacetime Extension for [nalgebra]
 [Documentation]: https://docs.rs/nalgebra-spacetime/badge.svg
 [License]: https://img.shields.io/crates/l/nalgebra-spacetime.svg
 
-[API Documentation with KaTeX](https://docs.rs/nalgebra-spacetime)
+API Documentation with KaTeX: [stable] | [master]
+
+[stable]: https://docs.rs/nalgebra-spacetime
+[master]: https://doc.qu1x.dev/nalgebra-spacetime
 
 # Present Features
 

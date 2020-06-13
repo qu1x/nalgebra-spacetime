@@ -20,7 +20,7 @@
 //!   * Wigner `rotation()` and `axis_angle()` of an already-composed `Boost4`.
 //!   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
 
-#[deny(missing_docs)]
+#![deny(missing_docs)]
 
 use std::ops::{Neg, Add};
 use nalgebra::{
@@ -559,29 +559,25 @@ where
 		P: Fn(N) -> bool,
 		L: Fn(N) -> bool,
 	{
-		if R::is::<U1>() || C::is::<U1>() {
-			let time = *unsafe { self.get_unchecked(0) };
-			let difference = rhs - self;
-			let interval = difference.scalar(&difference);
-			let light_cone = if is_lightlike(interval) {
-				if is_present(time) {
-					Origin
-				} else {
-					if time.is_sign_positive()
-						{ LightlikeFuture } else { LightlikePast }
-				}
+		let time = *unsafe { self.get_unchecked(0) };
+		let difference = rhs - self;
+		let interval = difference.scalar(&difference);
+		let light_cone = if is_lightlike(interval) {
+			if is_present(time) {
+				Origin
 			} else {
-				if interval.is_sign_positive() || is_present(time) {
-					Spacelike
-				} else {
-					if time.is_sign_positive()
-						{ TimelikeFuture } else { TimelikePast }
-				}
-			};
-			(interval, light_cone)
+				if time.is_sign_positive()
+					{ LightlikeFuture } else { LightlikePast }
+			}
 		} else {
-			panic!("No spacetime events, expected degree-1 tensors.");
-		}
+			if interval.is_sign_positive() || is_present(time) {
+				Spacelike
+			} else {
+				if time.is_sign_positive()
+					{ TimelikeFuture } else { TimelikePast }
+			}
+		};
+		(interval, light_cone)
 	}
 
 	fn new_boost<D>(frame: &FrameN<N, D>) -> Self

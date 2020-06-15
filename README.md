@@ -25,7 +25,7 @@ API Documentation with KaTeX: [stable] | [master]
 
 # Present Features
 
-  * Minkowski space as n-dimensional `LorentzianMN` space.
+  * Minkowski space as special case of `LorentzianMN` space.
   * Raising/Lowering tensor indices: `dual()`/`r_dual()`/`c_dual()`.
   * Metric contraction of degree-1/degree-2 tensors: `contr()`/`scalar()`.
   * Spacetime `interval()` with `LightCone` depiction.
@@ -40,16 +40,20 @@ API Documentation with KaTeX: [stable] | [master]
   * Categorize `Rotation4`/`PureBoost4`/`...` as `Boost4`/`...`.
   * Wigner `rotation()` and `axis_angle()` of an already-composed `Boost4`.
   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
+  * Spacetime algebra (STA) as special case of `CliffordMN` space.
 
-# Semi-Local Documentation Builds
+# Pseudo-Local Documentation Builds
 
 ```sh
-cargo tex
+# Build and open documentation inclusive dependencies.
 cargo doc --open
+# Update any source file, then regenerate this crate's documentation with KaTeX.
+cargo tex
+# Refresh opened documentation.
 ```
 
 With `cargo tex` defined in [.cargo/config](.cargo/config). Note that navigating
-the documentation requires web access as KaTeX is embedded via CDN.
+the documentation requires web access as KaTeX is embedded via remote CDN.
 
 ## License
 

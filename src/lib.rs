@@ -4,7 +4,7 @@
 //!
 //! # Present Features
 //!
-//!   * Minkowski space as n-dimensional `LorentzianMN` space.
+//!   * Minkowski space as special case of `LorentzianMN` space.
 //!   * Raising/Lowering tensor indices: `dual()`/`r_dual()`/`c_dual()`.
 //!   * Metric contraction of degree-1/degree-2 tensors: `contr()`/`scalar()`.
 //!   * Spacetime `interval()` with `LightCone` depiction.
@@ -19,6 +19,7 @@
 //!   * Categorize `Rotation4`/`PureBoost4`/`...` as `Boost4`/`...`.
 //!   * Wigner `rotation()` and `axis_angle()` of an already-composed `Boost4`.
 //!   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
+//!   * Spacetime algebra (STA) as special case of `CliffordMN` space.
 
 #![deny(missing_docs)]
 

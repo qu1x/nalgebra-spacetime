@@ -749,7 +749,6 @@ where
 	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 {
 	/// Inertial frame of reference with velocity $u^\mu$.
-	#[inline]
 	pub fn from_velocity<R, C>(u: &MatrixMN<N, R, C>) -> Self
 	where
 		R: DimName,
@@ -798,7 +797,6 @@ where
 	}
 
 	/// Velocity $u^\mu$.
-	#[inline]
 	pub fn velocity(&self) -> VectorN<N, D>
 	where
 		DefaultAllocator: Allocator<N, D>
@@ -943,6 +941,7 @@ where
 	ShapeConstraint: SameNumberOfColumns<C, U1>,
 	DefaultAllocator: Allocator<N, R, C> + Allocator<N, DimNameDiff<R, U1>>,
 {
+	#[inline]
 	fn from(u: MatrixMN<N, R, C>) -> Self {
 		u.frame()
 	}
@@ -954,6 +953,7 @@ where
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
 {
+	#[inline]
 	fn from(frame: FrameN<N, D>) -> Self {
 		frame.velocity()
 	}
@@ -967,6 +967,7 @@ where
 {
 	type Output = Self;
 
+	#[inline]
 	fn neg(mut self) -> Self::Output {
 		self.zeta_sinh = -self.zeta_sinh;
 		self
@@ -981,6 +982,7 @@ where
 {
 	type Output = Self;
 
+	#[inline]
 	fn add(self, rhs: Self) -> Self::Output {
 		self.compose(rhs)
 	}

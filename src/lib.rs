@@ -438,9 +438,11 @@ where
 		if R::is::<U1>() || C::is::<U1>() {
 			neg(unsafe { self.get_unchecked_mut(0) });
 		} else {
-			for i in 1..self.nrows() {
-				neg(unsafe { self.get_unchecked_mut((i, 0)) });
-				neg(unsafe { self.get_unchecked_mut((0, i)) });
+			for c in 1..self.ncols() {
+				neg(unsafe { self.get_unchecked_mut((0, c)) });
+			}
+			for r in 1..self.nrows() {
+				neg(unsafe { self.get_unchecked_mut((r, 0)) });
 			}
 		}
 	}

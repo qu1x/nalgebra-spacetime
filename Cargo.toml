@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra-spacetime"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Rouven Spreckels <n3vu0r@qu1x.org>"]
 edition = "2018"
 description = "Spacetime Extension for nalgebra"
@@ -17,7 +17,7 @@ keywords = [
 ]
 categories = [
 	"science",
-	"mathematics"
+	"mathematics",
 ]
 include = [
 	"src/**/*.rs",

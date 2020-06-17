@@ -38,7 +38,7 @@ use nalgebra::{
 		DimEq,
 	},
 	storage::{Storage, Owned},
-	DefaultAllocator, base::allocator::{Allocator, SameShapeAllocator},
+	DefaultAllocator, base::allocator::Allocator,
 };
 use num_traits::{sign::Signed, real::Real};
 use approx::{AbsDiffEq, abs_diff_eq};
@@ -54,8 +54,8 @@ use LightCone::*;
 pub trait LorentzianMN<N, R, C>
 where
 	N: Scalar,
-	R: Dim,
-	C: Dim,
+	R: DimName,
+	C: DimName,
 {
 	/// Lorentzian metric tensor $\eta_{\mu \nu}$:
 	///
@@ -105,8 +105,6 @@ where
 	/// ```
 	fn metric() -> Self
 	where
-		R: DimName,
-		C: DimName,
 		ShapeConstraint: SameDimension<R, C>;
 
 	/// Raises/Lowers *all* of its degree-1/degree-2 tensor indices.
@@ -245,15 +243,9 @@ where
 	///
 	///   * `is_present = |time| abs_diff_eq!(time, N::zero())`, and
 	///   * `is_lightlike = |interval| abs_diff_eq!(interval, N::zero())`.
-	fn interval<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>)
-	-> (N, LightCone)
+	fn interval(&self, rhs: &Self) -> (N, LightCone)
 	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: SameNumberOfRows<R2, R> + SameNumberOfColumns<C2, C>
-			+ DimEq<C, U1> + DimEq<C2, U1>,
-		DefaultAllocator: SameShapeAllocator<N, R2, C2, R, C>;
+		ShapeConstraint: DimEq<U1, C>;
 
 	/// Spacetime interval between two events and region of `self`'s light cone.
 	///
@@ -271,16 +263,11 @@ where
 	/// See `interval()` for using defaults and [approx] for further details.
 	///
 	/// [approx]: https://docs.rs/approx
-	fn interval_fn<R2, C2, SB, P, L>(&self, rhs: &Matrix<N, R2, C2, SB>,
+	fn interval_fn<P, L>(&self, rhs: &Self,
 		is_present: P, is_lightlike: L)
 	-> (N, LightCone)
 	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: SameNumberOfRows<R2, R> + SameNumberOfColumns<C2, C>
-			+ DimEq<C, U1> + DimEq<C2, U1>,
-		DefaultAllocator: SameShapeAllocator<N, R2, C2, R, C>,
+		ShapeConstraint: DimEq<U1, C>,
 		P: Fn(N) -> bool,
 		L: Fn(N) -> bool;
 
@@ -321,8 +308,6 @@ where
 	/// $$
 	fn new_boost<D>(frame: &FrameN<N, D>) -> Self
 	where
-		R: DimName,
-		C: DimName,
 		D: DimNameSub<U1>,
 		ShapeConstraint: AreMultipliable<R, C, R, C> + DimEq<R, D>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
@@ -345,8 +330,6 @@ where
 	/// See `boost_mut()` for further details.
 	fn boost<D>(&self, frame: &FrameN<N, D>) -> Self
 	where
-		R: DimName,
-		C: DimName,
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
@@ -370,8 +353,6 @@ where
 	/// Equals relativistic velocity addition $v \oplus u$ in case $x \equiv v$.
 	fn boost_mut<D>(&mut self, frame: &FrameN<N, D>)
 	where
-		R: DimName,
-		C: DimName,
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
@@ -379,8 +360,6 @@ where
 	/// Velocity $u^\mu$ of inertial `frame` of reference.
 	fn new_velocity<D>(frame: &FrameN<N, D>) -> VectorN<N, D>
 	where
-		R: DimName,
-		C: DimName,
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>;
@@ -389,7 +368,6 @@ where
 	fn frame(&self) -> FrameN<N, R>
 	where
 		R: DimNameSub<U1>,
-		C: DimName,
 		ShapeConstraint: SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<R, U1>>;
 }
@@ -397,15 +375,13 @@ where
 impl<N, R, C> LorentzianMN<N, R, C> for MatrixMN<N, R, C>
 where
 	N: SimdRealField + Signed + Real + AbsDiffEq,
-	R: Dim,
-	C: Dim,
+	R: DimName,
+	C: DimName,
 	DefaultAllocator: Allocator<N, R, C>,
 {
 	#[inline]
 	fn metric() -> Self
 	where
-		R: DimName,
-		C: DimName,
 		ShapeConstraint: SameDimension<R, C>,
 	{
 		let mut m = Self::identity();
@@ -437,24 +413,29 @@ where
 	fn dual_mut(&mut self) {
 		if R::is::<U1>() || C::is::<U1>() {
 			neg(unsafe { self.get_unchecked_mut(0) });
-		} else {
-			for c in 1..self.ncols() {
-				neg(unsafe { self.get_unchecked_mut((0, c)) });
+		} else if R::is::<C>() {
+			for i in 1..R::dim() {
+				neg(unsafe { self.get_unchecked_mut((i, 0)) });
+				neg(unsafe { self.get_unchecked_mut((0, i)) });
 			}
-			for r in 1..self.nrows() {
+		} else {
+			for r in 1..R::dim() {
 				neg(unsafe { self.get_unchecked_mut((r, 0)) });
+			}
+			for c in 1..C::dim() {
+				neg(unsafe { self.get_unchecked_mut((0, c)) });
 			}
 		}
 	}
 
 	fn r_dual_mut(&mut self) {
-		for c in 0..self.ncols() {
+		for c in 0..C::dim() {
 			neg(unsafe { self.get_unchecked_mut((0, c)) });
 		}
 	}
 
 	fn c_dual_mut(&mut self) {
-		for r in 0..self.nrows() {
+		for r in 0..R::dim() {
 			neg(unsafe { self.get_unchecked_mut((r, 0)) });
 		}
 	}
@@ -552,15 +533,9 @@ where
 	}
 
 	#[inline]
-	fn interval<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>)
-	-> (N, LightCone)
+	fn interval(&self, rhs: &Self) -> (N, LightCone)
 	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: SameNumberOfRows<R2, R> + SameNumberOfColumns<C2, C>
-			+ DimEq<C, U1> + DimEq<C2, U1>,
-		DefaultAllocator: SameShapeAllocator<N, R2, C2, R, C>
+		ShapeConstraint: DimEq<U1, C>,
 	{
 		self.interval_fn(rhs,
 			|time| abs_diff_eq!(time, N::zero()),
@@ -568,16 +543,11 @@ where
 		)
 	}
 
-	fn interval_fn<R2, C2, SB, P, L>(&self, rhs: &Matrix<N, R2, C2, SB>,
+	fn interval_fn<P, L>(&self, rhs: &Self,
 		is_present: P, is_lightlike: L)
 	-> (N, LightCone)
 	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: SameNumberOfRows<R2, R> + SameNumberOfColumns<C2, C>
-			+ DimEq<C, U1> + DimEq<C2, U1>,
-		DefaultAllocator: SameShapeAllocator<N, R2, C2, R, C>,
+		ShapeConstraint: DimEq<U1, C>,
 		P: Fn(N) -> bool,
 		L: Fn(N) -> bool,
 	{
@@ -604,8 +574,6 @@ where
 
 	fn new_boost<D>(frame: &FrameN<N, D>) -> Self
 	where
-		R: DimName,
-		C: DimName,
 		D: DimNameSub<U1>,
 		ShapeConstraint: AreMultipliable<R, C, R, C> + DimEq<R, D>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
@@ -629,8 +597,6 @@ where
 	#[inline]
 	fn boost<D>(&self, frame: &FrameN<N, D>) -> Self
 	where
-		R: DimName,
-		C: DimName,
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
@@ -642,8 +608,6 @@ where
 
 	fn boost_mut<D>(&mut self, frame: &FrameN<N, D>)
 	where
-		R: DimName,
-		C: DimName,
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
@@ -660,8 +624,6 @@ where
 	#[inline]
 	fn new_velocity<D>(frame: &FrameN<N, D>) -> VectorN<N, D>
 	where
-		R: DimName,
-		C: DimName,
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
@@ -673,7 +635,6 @@ where
 	fn frame(&self) -> FrameN<N, R>
 	where
 		R: DimNameSub<U1>,
-		C: DimName,
 		ShapeConstraint: SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<R, U1>>,
 	{
@@ -751,8 +712,8 @@ where
 	/// Inertial frame of reference with velocity $u^\mu$.
 	pub fn from_velocity<R, C>(u: &MatrixMN<N, R, C>) -> Self
 	where
-		R: DimName,
-		C: DimName,
+		R: Dim,
+		C: Dim,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, R, C>
 	{

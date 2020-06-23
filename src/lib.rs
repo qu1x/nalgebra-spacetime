@@ -245,6 +245,7 @@ where
 	///   * `is_lightlike = |interval| abs_diff_eq!(interval, N::zero())`.
 	fn interval(&self, rhs: &Self) -> (N, LightCone)
 	where
+		N: AbsDiffEq,
 		ShapeConstraint: DimEq<U1, C>;
 
 	/// Spacetime interval between two events and region of `self`'s light cone.
@@ -374,7 +375,7 @@ where
 
 impl<N, R, C> LorentzianMN<N, R, C> for MatrixMN<N, R, C>
 where
-	N: SimdRealField + Signed + Real + AbsDiffEq,
+	N: SimdRealField + Signed + Real,
 	R: DimName,
 	C: DimName,
 	DefaultAllocator: Allocator<N, R, C>,
@@ -535,6 +536,7 @@ where
 	#[inline]
 	fn interval(&self, rhs: &Self) -> (N, LightCone)
 	where
+		N: AbsDiffEq,
 		ShapeConstraint: DimEq<U1, C>,
 	{
 		self.interval_fn(rhs,
@@ -705,7 +707,7 @@ where
 
 impl<N, D> FrameN<N, D>
 where
-	N: SimdRealField + Signed + Real + AbsDiffEq,
+	N: SimdRealField + Signed + Real,
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 {
@@ -814,7 +816,7 @@ where
 
 impl<N> FrameN<N, U4>
 where
-	N: SimdRealField + Signed + Real + AbsDiffEq,
+	N: SimdRealField + Signed + Real,
 	DefaultAllocator: Allocator<N, U3>,
 {
 	/// $
@@ -896,7 +898,7 @@ where
 
 impl<N, R, C> From<MatrixMN<N, R, C>> for FrameN<N, R>
 where
-	N: SimdRealField + Signed + Real + AbsDiffEq,
+	N: SimdRealField + Signed + Real,
 	R: DimNameSub<U1>,
 	C: DimName,
 	ShapeConstraint: SameNumberOfColumns<C, U1>,
@@ -910,7 +912,7 @@ where
 
 impl<N, D> From<FrameN<N, D>> for VectorN<N, D>
 where
-	N: SimdRealField + Signed + Real + AbsDiffEq,
+	N: SimdRealField + Signed + Real,
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
 {
@@ -922,7 +924,7 @@ where
 
 impl<N, D> Neg for FrameN<N, D>
 where
-	N: SimdRealField + Signed + Real + AbsDiffEq,
+	N: SimdRealField + Signed + Real,
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 {
@@ -937,7 +939,7 @@ where
 
 impl<N, D> Add for FrameN<N, D>
 where
-	N: SimdRealField + Signed + Real + AbsDiffEq,
+	N: SimdRealField + Signed + Real,
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
 {
@@ -951,7 +953,7 @@ where
 
 impl<N, D> Copy for FrameN<N, D>
 where
-	N: SimdRealField + Signed + Real + AbsDiffEq,
+	N: SimdRealField + Signed + Real,
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 	Owned<N, DimNameDiff<D, U1>>: Copy,

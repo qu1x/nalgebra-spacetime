@@ -195,47 +195,17 @@ where
 
 	/// Lorentzian norm of timelike degree-1/degree-2 tensors.
 	///
-	/// Equals `self.scalar().neg().sqrt()`.
+	/// Equals `self.scalar(self).neg().sqrt()`.
 	///
 	/// If spacelike, returns *NaN* or panics if `N` doesn't support it.
-	fn timelike_norm<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
-	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: DimEq<R, R2> + DimEq<C, C2>;
-
-	/// Same as `timelike_norm()` but with transposed tensor indices.
-	///
-	/// Equals `self.tr_scalar().neg().sqrt()`.
-	fn tr_timelike_norm<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
-	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: DimEq<C, R2> + DimEq<R, C2>;
+	fn timelike_norm(&self) -> N;
 
 	/// Lorentzian norm of spacelike degree-1/degree-2 tensors.
 	///
-	/// Equals `self.scalar().sqrt()`.
+	/// Equals `self.scalar(self).sqrt()`.
 	///
 	/// If timelike, returns *NaN* or panics if `N` doesn't support it.
-	fn spacelike_norm<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
-	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: DimEq<R, R2> + DimEq<C, C2>;
-
-	/// Same as `spacelike_norm()` but with transposed tensor indices.
-	///
-	/// Equals `self.tr_scalar().sqrt()`.
-	fn tr_spacelike_norm<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
-	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: DimEq<C, R2> + DimEq<R, C2>;
+	fn spacelike_norm(&self) -> N;
 
 	/// Spacetime interval between two events and region of `self`'s light cone.
 	///
@@ -490,47 +460,13 @@ where
 	}
 
 	#[inline]
-	fn timelike_norm<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
-	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: DimEq<R, R2> + DimEq<C, C2>,
-	{
-		self.scalar(rhs).neg().sqrt()
+	fn timelike_norm(&self) -> N {
+		self.scalar(self).neg().sqrt()
 	}
 
 	#[inline]
-	fn tr_timelike_norm<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
-	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: DimEq<C, R2> + DimEq<R, C2>,
-	{
-		self.tr_scalar(rhs).neg().sqrt()
-	}
-
-	#[inline]
-	fn spacelike_norm<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
-	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: DimEq<R, R2> + DimEq<C, C2>,
-	{
-		self.scalar(rhs).sqrt()
-	}
-
-	#[inline]
-	fn tr_spacelike_norm<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
-	where
-		R2: Dim,
-		C2: Dim,
-		SB: Storage<N, R2, C2>,
-		ShapeConstraint: DimEq<C, R2> + DimEq<R, C2>,
-	{
-		self.tr_scalar(rhs).sqrt()
+	fn spacelike_norm(&self) -> N {
+		self.scalar(self).sqrt()
 	}
 
 	#[inline]

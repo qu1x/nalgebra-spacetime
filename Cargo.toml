@@ -1,7 +1,7 @@
 [package]
 name = "nalgebra-spacetime"
-version = "0.1.2"
-authors = ["Rouven Spreckels <n3vu0r@qu1x.org>"]
+version = "0.1.3"
+authors = ["Rouven Spreckels <rs@qu1x.dev>"]
 edition = "2018"
 description = "Spacetime Extension for nalgebra"
 documentation = "https://docs.rs/nalgebra-spacetime"

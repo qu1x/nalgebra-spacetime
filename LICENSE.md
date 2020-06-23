@@ -1,4 +1,4 @@
-Copyright © 2020 Rouven Spreckels <n3vu0r@qu1x.org>
+Copyright © 2020 Rouven Spreckels <rs@qu1x.dev>
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 

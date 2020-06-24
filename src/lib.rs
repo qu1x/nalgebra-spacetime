@@ -26,6 +26,7 @@
 use std::ops::{Neg, Add};
 use nalgebra::{
 	Unit, VectorN, Vector3, Matrix, MatrixMN, Matrix4, Rotation3,
+	MatrixSliceMN, MatrixSliceMutMN,
 	Scalar, SimdRealField,
 	Dim, DimName, DimNameSub, DimNameDiff,
 	base::dimension::*,
@@ -37,7 +38,7 @@ use nalgebra::{
 		AreMultipliable,
 		DimEq,
 	},
-	storage::{Storage, Owned},
+	storage::{Storage, StorageMut, Owned},
 	DefaultAllocator, base::allocator::Allocator,
 };
 use num_traits::{sign::Signed, real::Real};
@@ -341,6 +342,38 @@ where
 		R: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<R, U1>>;
+
+	/// Temporal component.
+	fn temporal(&self) -> &N
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>;
+
+	/// Mutable temporal component.
+	fn temporal_mut(&mut self) -> &mut N
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>;
+
+	/// Spatial components.
+	fn spatial(&self)
+	-> MatrixSliceMN<N, DimNameDiff<R, U1>, C, U1, R>
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+		DefaultAllocator: Allocator<N, R, C>,
+		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
+			Storage<N, R, C, RStride = U1, CStride = R>;
+
+	/// Mutable spatial components.
+	fn spatial_mut(&mut self)
+	-> MatrixSliceMutMN<N, DimNameDiff<R, U1>, C, U1, R>
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+		DefaultAllocator: Allocator<N, R, C>,
+		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
+			StorageMut<N, R, C, RStride = U1, CStride = R>;
 }
 
 impl<N, R, C> LorentzianMN<N, R, C> for MatrixMN<N, R, C>
@@ -577,6 +610,48 @@ where
 		DefaultAllocator: Allocator<N, DimNameDiff<R, U1>>,
 	{
 		FrameN::<N, R>::from_velocity(self)
+	}
+
+	#[inline]
+	fn temporal(&self) -> &N
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+	{
+		unsafe { self.get_unchecked(0) }
+	}
+
+	#[inline]
+	fn temporal_mut(&mut self) -> &mut N
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+	{
+		unsafe { self.get_unchecked_mut(0) }
+	}
+
+	#[inline]
+	fn spatial(&self)
+	-> MatrixSliceMN<N, DimNameDiff<R, U1>, C, U1, R>
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
+			Storage<N, R, C, RStride = U1, CStride = R>,
+	{
+		self.fixed_slice::<DimNameDiff<R, U1>, C>(1, 0)
+	}
+
+	#[inline]
+	fn spatial_mut(&mut self)
+	-> MatrixSliceMutMN<N, DimNameDiff<R, U1>, C, U1, R>
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
+			StorageMut<N, R, C, RStride = U1, CStride = R>,
+	{
+		self.fixed_slice_mut::<DimNameDiff<R, U1>, C>(1, 0)
 	}
 }
 

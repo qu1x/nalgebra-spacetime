@@ -23,10 +23,10 @@
 
 #![deny(missing_docs)]
 
-use std::ops::{Neg, Add};
+use std::ops::{Neg, Add, Sub};
 use nalgebra::{
 	Unit, VectorN, Vector3, Matrix, MatrixMN, Matrix4, Rotation3,
-	MatrixSliceMN, MatrixSliceMutMN,
+	VectorSliceN, MatrixSliceMN, MatrixSliceMutMN,
 	Scalar, SimdRealField,
 	Dim, DimName, DimNameSub, DimNameDiff,
 	base::dimension::*,
@@ -329,6 +329,16 @@ where
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
 
+	/// With `temporal` and `spatial` components.
+	fn new<D>(temporal: &N, spatial: &VectorN<N, DimNameDiff<D, U1>>)
+	-> VectorN<N, D>
+	where
+		D: DimNameSub<U1>,
+		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
+		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
+		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
+			StorageMut<N, D, U1, RStride = U1, CStride = D>;
+
 	/// Velocity $u^\mu$ of inertial `frame` of reference.
 	fn new_velocity<D>(frame: &FrameN<N, D>) -> VectorN<N, D>
 	where
@@ -590,6 +600,21 @@ where
 		*unsafe { self.get_unchecked_mut(0) } = zeta_cosh * a - zeta_sinh * zu;
 		let mut z = self.fixed_rows_mut::<DimNameDiff<D, U1>>(1);
 		z += u * ((zeta_cosh - N::one()) * zu - zeta_sinh * a);
+	}
+
+	fn new<D>(temporal: &N, spatial: &VectorN<N, DimNameDiff<D, U1>>)
+	-> VectorN<N, D>
+	where
+		D: DimNameSub<U1>,
+		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
+		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
+		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
+			StorageMut<N, D, U1, RStride = U1, CStride = D>,
+	{
+		let mut v = unsafe { VectorN::<N, D>::new_uninitialized() };
+		*v.temporal_mut() = *temporal;
+		v.spatial_mut().copy_from(spatial);
+		v
 	}
 
 	#[inline]
@@ -970,3 +995,130 @@ where
 	Owned<N, DimNameDiff<D, U1>>: Copy,
 {
 }
+
+/// Momentum in $n$-dimensional Lorentzian space $\R^{-,+} = \R^{1,n}$.
+#[derive(Debug, PartialEq, Clone)]
+pub struct MomentumN<N, D>
+where
+	N: Scalar,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, D>,
+{
+	momentum: VectorN<N, D>,
+}
+
+impl<N, D> MomentumN<N, D>
+where
+	N: SimdRealField + Signed + Real,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, D>,
+{
+	/// Momentum with `energy` as temporal and `momentum` as spatial components.
+	#[inline]
+	pub fn new(energy: &N, momentum: &VectorN<N, DimNameDiff<D, U1>>) -> Self
+	where
+		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
+		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
+			StorageMut<N, D, U1, RStride = U1, CStride = D>,
+	{
+		Self { momentum: VectorN::<N, D>::new(energy, momentum) }
+	}
+
+	/// Momentum with rest `mass` at `velocity` as `velocity * mass`.
+	#[inline]
+	pub fn from_mass_at_velocity(mass: N, velocity: VectorN<N, D>) -> Self
+	where
+		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
+	{
+		Self { momentum: velocity * mass }
+	}
+
+	/// Momentum with rest `mass` at `frame` as `frame.velocity() * mass`.
+	#[inline]
+	pub fn from_mass_at_frame(mass: N, frame: FrameN<N, D>) -> Self
+	where
+		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
+	{
+		Self::from_mass_at_velocity(mass, frame.velocity())
+	}
+
+	/// Momentum with rest `mass` as temporal component.
+	#[inline]
+	pub fn from_mass_at_rest(mass: N) -> Self {
+		let mut momentum = VectorN::<N, D>::zeros();
+		*momentum.temporal_mut() = mass;
+		Self { momentum }
+	}
+
+	/// Rest mass as timelike norm.
+	#[inline]
+	pub fn mass_at_rest(&self) -> N {
+		self.momentum.timelike_norm()
+	}
+
+	/// Velocity as momentum divided by `mass_at_rest()`.
+	pub fn velocity(&self) -> VectorN<N, D> {
+		self.momentum.clone() / self.mass_at_rest()
+	}
+
+	/// Energy as temporal component.
+	#[inline]
+	pub fn energy(&self) -> &N {
+		self.momentum.temporal()
+	}
+
+	/// Momentum as spatial components.
+	#[inline]
+	pub fn momentum(&self) -> VectorSliceN<N, DimNameDiff<D, U1>, U1, D>
+	where
+		DefaultAllocator: Allocator<N, D, U1>,
+		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
+			Storage<N, D, U1, RStride = U1, CStride = D>,
+	{
+		self.momentum.spatial()
+	}
+}
+
+impl<N, D> Add<Self> for MomentumN<N, D>
+where
+	N: SimdRealField + Signed + Real,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, D>,
+{
+	type Output = Self;
+
+	#[inline]
+	fn add(self, rhs: Self) -> Self::Output {
+		Self { momentum: self.momentum + rhs.momentum }
+	}
+}
+
+impl<N, D> Sub<Self> for MomentumN<N, D>
+where
+	N: SimdRealField + Signed + Real,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, D>,
+{
+	type Output = Self;
+
+	#[inline]
+	fn sub(self, rhs: Self) -> Self::Output {
+		Self { momentum: self.momentum - rhs.momentum }
+	}
+}
+
+impl<N, D> Copy for MomentumN<N, D>
+where
+	N: SimdRealField + Signed + Real,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, D>,
+	Owned<N, D>: Copy,
+{
+}
+
+/// Momentum in $2$-dimensional Lorentzian space $\R^{-,+} = \R^{1,1}$.
+pub type Momentum2<N> = MomentumN<N, U2>;
+/// Momentum in $3$-dimensional Lorentzian space $\R^{-,+} = \R^{1,2}$.
+pub type Momentum3<N> = MomentumN<N, U3>;
+/// Momentum in $4$-dimensional Lorentzian space $\R^{-,+} = \R^{1,3}$.
+pub type Momentum4<N> = MomentumN<N, U4>;

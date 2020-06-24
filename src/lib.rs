@@ -1052,13 +1052,13 @@ where
 
 	/// Rest mass as timelike norm.
 	#[inline]
-	pub fn mass_at_rest(&self) -> N {
+	pub fn mass(&self) -> N {
 		self.momentum.timelike_norm()
 	}
 
-	/// Velocity as momentum divided by `mass_at_rest()`.
+	/// Velocity as momentum divided by rest `mass()`.
 	pub fn velocity(&self) -> VectorN<N, D> {
-		self.momentum.clone() / self.mass_at_rest()
+		self.momentum.clone() / self.mass()
 	}
 
 	/// Energy as temporal component.

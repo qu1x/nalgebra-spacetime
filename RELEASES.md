@@ -1,8 +1,10 @@
-# Version 0.1.2 (2020-06-17)
+# Version 0.2.0 (2020-06-25)
 
-  * Fix possible unsound iteration within `dual()` and `dual_mut()`.
-  * Bind `LorentzianMN` to `DimName`.
-  * Simplify trait bounds of `interval()`/`interval_fn()`.
+  * Add `boost_mut()` test.
+  * Add `Momentum4`.
+  * Add `temporal()` and `spatial()` methods.
+  * Fix signature of norm methods.
+  * Clean up trait bounds.
 
 # Version 0.1.1 (2020-06-08)
 

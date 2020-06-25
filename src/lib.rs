@@ -292,11 +292,11 @@ where
 	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
 	/// use approx::assert_ulps_eq;
 	///
-	/// let muon_rest_lifetime = Vector4::new(2.2e-6, 0.0, 0.0, 0.0);
-	/// let muon_frame = Frame4::from_axis_beta(Vector3::z_axis(), 0.9952f64);
-	/// let muon_lifetime = muon_rest_lifetime.boost(&muon_frame);
-	/// let time_dilation_factor = muon_lifetime[0] / muon_rest_lifetime[0];
-	/// assert_ulps_eq!((time_dilation_factor * 10.0).round() * 0.1, 10.2);
+	/// let muon_lifetime_at_rest = Vector4::new(2.2e-6, 0.0, 0.0, 0.0);
+	/// let muon_frame = Frame4::from_axis_beta(Vector3::z_axis(), 0.9952);
+	/// let muon_lifetime = muon_lifetime_at_rest.boost(&muon_frame);
+	/// let time_dilation_factor = muon_lifetime[0] / muon_lifetime_at_rest[0];
+	/// assert_ulps_eq!(time_dilation_factor, 10.218, epsilon = 1e-3);
 	/// ```
 	///
 	/// See `boost_mut()` for further details.

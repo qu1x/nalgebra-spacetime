@@ -911,17 +911,17 @@ where
 	/// ```
 	/// use nalgebra::Vector3;
 	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
-	/// use approx::assert_relative_eq;
+	/// use approx::{assert_abs_diff_ne, assert_relative_eq};
 	///
-	/// let v = Frame4::from_axis_beta(Vector3::x_axis(), 0.4f64);
-	/// let u = Frame4::from_axis_beta(Vector3::y_axis(), 0.6f64);
+	/// let u = Frame4::from_beta(Vector3::new(0.18, 0.73, 0.07));
+	/// let v = Frame4::from_beta(Vector3::new(0.41, 0.14, 0.25));
 	///
 	/// let ucv = u.compose(v).axis();
 	/// let vcu = v.compose(u).axis();
 	///
 	/// let (axis, angle) = v.axis_angle(&u);
 	///
-	/// assert_relative_eq!(axis, Vector3::z_axis());
+	/// assert_abs_diff_ne!(angle, 0.0, epsilon = 1e-15);
 	/// assert_relative_eq!(angle, ucv.angle(&vcu), epsilon = 1e-15);
 	/// ```
 	pub fn axis_angle(&self, frame: &Self) -> (Unit<Vector3<N>>, N) {

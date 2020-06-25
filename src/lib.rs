@@ -330,7 +330,7 @@ where
 	/// use approx::assert_ulps_eq;
 	///
 	/// // Arbitrary timelike four momentum.
-	/// let mut momentum = Vector4::new(90.0, 5.0, 6.0, 7.0);
+	/// let mut momentum = Vector4::new(24.3, 5.22, 16.8, 9.35);
 	///
 	/// // Invariant rest mass.
 	/// let mass = momentum.timelike_norm();
@@ -343,7 +343,7 @@ where
 	/// momentum.boost_mut(&velocity.frame());
 	///
 	/// // Four momentum boosted to its own frame is a trivial four momentum.
-	/// assert_ulps_eq!(momentum, mass_at_rest, epsilon = 1e-15);
+	/// assert_ulps_eq!(momentum, mass_at_rest, epsilon = 1e-14);
 	/// ```
 	fn boost_mut<D>(&mut self, frame: &FrameN<N, D>)
 	where

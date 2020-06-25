@@ -21,7 +21,8 @@
 //!   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
 //!   * Spacetime algebra (STA) as special case of `CliffordMN` space.
 
-#![deny(missing_docs)]
+#![forbid(unsafe_code)]
+#![forbid(missing_docs)]
 
 use std::ops::{Neg, Add, Sub};
 use nalgebra::{
@@ -29,7 +30,7 @@ use nalgebra::{
 	VectorSliceN, MatrixSliceMN, MatrixSliceMutMN,
 	Scalar, SimdRealField,
 	Dim, DimName, DimNameSub, DimNameDiff,
-	base::dimension::*,
+	base::dimension::{U1, U2, U3, U4},
 	constraint::{
 		ShapeConstraint,
 		SameDimension,
@@ -465,7 +466,7 @@ where
 		ShapeConstraint: SameDimension<R, C>,
 	{
 		let mut m = Self::identity();
-		neg(unsafe { m.get_unchecked_mut((0, 0)) });
+		neg(m.get_mut((0, 0)).unwrap());
 		m
 	}
 
@@ -492,31 +493,31 @@ where
 
 	fn dual_mut(&mut self) {
 		if R::is::<U1>() || C::is::<U1>() {
-			neg(unsafe { self.get_unchecked_mut(0) });
+			neg(self.get_mut(0).unwrap());
 		} else if R::is::<C>() {
 			for i in 1..R::dim() {
-				neg(unsafe { self.get_unchecked_mut((i, 0)) });
-				neg(unsafe { self.get_unchecked_mut((0, i)) });
+				neg(self.get_mut((i, 0)).unwrap());
+				neg(self.get_mut((0, i)).unwrap());
 			}
 		} else {
 			for r in 1..R::dim() {
-				neg(unsafe { self.get_unchecked_mut((r, 0)) });
+				neg(self.get_mut((r, 0)).unwrap());
 			}
 			for c in 1..C::dim() {
-				neg(unsafe { self.get_unchecked_mut((0, c)) });
+				neg(self.get_mut((0, c)).unwrap());
 			}
 		}
 	}
 
 	fn r_dual_mut(&mut self) {
 		for c in 0..C::dim() {
-			neg(unsafe { self.get_unchecked_mut((0, c)) });
+			neg(self.get_mut((0, c)).unwrap());
 		}
 	}
 
 	fn c_dual_mut(&mut self) {
 		for r in 0..R::dim() {
-			neg(unsafe { self.get_unchecked_mut((r, 0)) });
+			neg(self.get_mut((r, 0)).unwrap());
 		}
 	}
 
@@ -598,7 +599,7 @@ where
 		P: Fn(N) -> bool,
 		L: Fn(N) -> bool,
 	{
-		let time = *unsafe { self.get_unchecked(0) };
+		let time = self[0];
 		let difference = rhs - self;
 		let interval = difference.scalar(&difference);
 		let light_cone = if is_lightlike(interval) {
@@ -626,19 +627,17 @@ where
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 	{
 		let &FrameN { zeta_cosh, zeta_sinh, ref axis } = frame;
-		let mut lambda = Self::zeros();
+		let mut b = Self::zeros();
 		for (i, u) in axis.iter().enumerate() {
-			unsafe {
-				*lambda.get_unchecked_mut((i + 1, 0)) = u.inlined_clone();
-				*lambda.get_unchecked_mut((0, i + 1)) = u.inlined_clone();
-			}
+			b[(i + 1, 0)] = u.inlined_clone();
+			b[(0, i + 1)] = u.inlined_clone();
 		}
-		let uk = lambda.clone_owned();
-		lambda.gemm(zeta_cosh - N::one(), &uk, &uk, -zeta_sinh);
+		let uk = b.clone_owned();
+		b.gemm(zeta_cosh - N::one(), &uk, &uk, -zeta_sinh);
 		for i in 0..D::dim() {
-			unsafe { *lambda.get_unchecked_mut((i, i)) += N::one(); }
+			b[(i, i)] += N::one();
 		}
-		lambda
+		b
 	}
 
 	#[inline]
@@ -661,9 +660,9 @@ where
 	{
 		let &FrameN { zeta_cosh, zeta_sinh, ref axis } = frame;
 		let u = axis.as_ref();
-		let a = *unsafe { self.get_unchecked(0) };
+		let a = self[0];
 		let zu = self.fixed_rows::<DimNameDiff<D, U1>>(1).dot(u);
-		*unsafe { self.get_unchecked_mut(0) } = zeta_cosh * a - zeta_sinh * zu;
+		self[0] = zeta_cosh * a - zeta_sinh * zu;
 		let mut z = self.fixed_rows_mut::<DimNameDiff<D, U1>>(1);
 		z += u * ((zeta_cosh - N::one()) * zu - zeta_sinh * a);
 	}
@@ -698,7 +697,7 @@ where
 		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
 			StorageMut<N, D, U1, RStride = U1, CStride = D>,
 	{
-		let mut v = unsafe { VectorN::<N, D>::new_uninitialized() };
+		let mut v = VectorN::<N, D>::zeros();
 		*v.temporal_mut() = *temporal;
 		v.spatial_mut().copy_from(spatial);
 		v
@@ -728,7 +727,7 @@ where
 	{
 		let (temporal, spatial) = self.as_mut_slice().split_at_mut(1);
 		(
-			unsafe { temporal.get_unchecked_mut(0) },
+			temporal.get_mut(0).unwrap(),
 			MatrixSliceMutMN::<N, DimNameDiff<R, U1>, C>::from_slice(spatial),
 		)
 	}
@@ -739,7 +738,7 @@ where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
 	{
-		unsafe { self.get_unchecked(0) }
+		self.get(0).unwrap()
 	}
 
 	#[inline]
@@ -748,7 +747,7 @@ where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
 	{
-		unsafe { self.get_unchecked_mut(0) }
+		self.get_mut(0).unwrap()
 	}
 
 	#[inline]
@@ -851,8 +850,8 @@ where
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, R, C>
 	{
-		let mut scaled_axis = unsafe { VectorN::new_uninitialized() };
-		let zeta_cosh = *unsafe { u.get_unchecked(0) };
+		let mut scaled_axis = VectorN::zeros();
+		let zeta_cosh = u[0];
 		scaled_axis.iter_mut()
 			.zip(u.fixed_rows::<DimNameDiff<D, U1>>(1).iter())
 			.for_each(|(scaled_axis, &u)| *scaled_axis = u);
@@ -896,8 +895,8 @@ where
 	where
 		DefaultAllocator: Allocator<N, D>
 	{
-		let mut u = unsafe { VectorN::<N, D>::new_uninitialized() };
-		*unsafe { u.get_unchecked_mut(0) } = self.gamma();
+		let mut u = VectorN::<N, D>::zeros();
+		u[0] = self.gamma();
 		u.fixed_rows_mut::<DimNameDiff<D, U1>>(1).iter_mut()
 			.zip(self.axis.iter())
 			.for_each(|(u, &axis)| *u = self.beta_gamma() * axis);

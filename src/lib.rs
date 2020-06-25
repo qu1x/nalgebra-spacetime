@@ -1081,7 +1081,7 @@ where
 {
 }
 
-/// Momentum in $n$-dimensional Lorentzian space $\R^{-,+} = \R^{1,n}$.
+/// Momentum in $n$-dimensional Lorentzian space $\R^{-,+} = \R^{1,n-1}$.
 #[derive(Debug, PartialEq, Clone)]
 pub struct MomentumN<N, D>
 where

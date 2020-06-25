@@ -1,7 +1,8 @@
 # Version 0.2.0 (2020-06-25)
 
+  * Improve `axis_angle()` test.
   * Add `boost_mut()` test.
-  * Add `Momentum4`.
+  * Add `Momentum4` (incomplete).
   * Add `temporal()` and `spatial()` methods.
   * Fix signature of norm methods.
   * Clean up trait bounds.

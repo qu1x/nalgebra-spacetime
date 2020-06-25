@@ -1,5 +1,6 @@
 # Version 0.2.0 (2020-06-25)
 
+  * Add spacetime `split()/from_split()` and `split_mut()`.
   * Improve `axis_angle()` test.
   * Add `boost_mut()` test.
   * Add `Momentum4` (incomplete).

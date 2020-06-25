@@ -351,16 +351,6 @@ where
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
 
-	/// With `temporal` and `spatial` components.
-	fn new<D>(temporal: &N, spatial: &VectorN<N, DimNameDiff<D, U1>>)
-	-> VectorN<N, D>
-	where
-		D: DimNameSub<U1>,
-		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
-		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
-			StorageMut<N, D, U1, RStride = U1, CStride = D>;
-
 	/// Velocity $u^\mu$ of inertial `frame` of reference.
 	fn new_velocity<D>(frame: &FrameN<N, D>) -> VectorN<N, D>
 	where
@@ -374,6 +364,49 @@ where
 		R: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<R, U1>>;
+
+	/// From `temporal` and `spatial` spacetime split.
+	fn from_split<D>(temporal: &N, spatial: &VectorN<N, DimNameDiff<D, U1>>)
+	-> VectorN<N, D>
+	where
+		D: DimNameSub<U1>,
+		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
+		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
+		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
+			StorageMut<N, D, U1, RStride = U1, CStride = D>;
+
+	/// Spacetime split into `temporal()` and `spatial()`.
+	fn split(&self) -> (&N, MatrixSliceMN<N, DimNameDiff<R, U1>, C, U1, R>)
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+		DefaultAllocator: Allocator<N, R, C>,
+		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
+			Storage<N, R, C, RStride = U1, CStride = R>;
+
+	/// Mutable spacetime split into `temporal_mut()` and `spatial_mut()`.
+	///
+	/// ```
+	/// use nalgebra::Vector4;
+	/// use nalgebra_spacetime::LorentzianMN;
+	/// use approx::assert_ulps_eq;
+	///
+	/// let mut spacetime = Vector4::new(1.0, 2.0, 3.0, 4.0);
+	/// let (temporal, mut spatial) = spacetime.split_mut();
+	/// *temporal += 1.0;
+	/// spatial[0] += 2.0;
+	/// spatial[1] += 3.0;
+	/// spatial[2] += 4.0;
+	/// assert_ulps_eq!(spacetime, Vector4::new(2.0, 4.0, 6.0, 8.0));
+	/// ```
+	fn split_mut(&mut self)
+	-> (&mut N, MatrixSliceMutMN<N, DimNameDiff<R, U1>, C>)
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+		DefaultAllocator: Allocator<N, R, C>,
+		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
+			Storage<N, R, C, RStride = U1, CStride = R>;
 
 	/// Temporal component.
 	fn temporal(&self) -> &N
@@ -624,21 +657,6 @@ where
 		z += u * ((zeta_cosh - N::one()) * zu - zeta_sinh * a);
 	}
 
-	fn new<D>(temporal: &N, spatial: &VectorN<N, DimNameDiff<D, U1>>)
-	-> VectorN<N, D>
-	where
-		D: DimNameSub<U1>,
-		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
-		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
-			StorageMut<N, D, U1, RStride = U1, CStride = D>,
-	{
-		let mut v = unsafe { VectorN::<N, D>::new_uninitialized() };
-		*v.temporal_mut() = *temporal;
-		v.spatial_mut().copy_from(spatial);
-		v
-	}
-
 	#[inline]
 	fn new_velocity<D>(frame: &FrameN<N, D>) -> VectorN<N, D>
 	where
@@ -657,6 +675,51 @@ where
 		DefaultAllocator: Allocator<N, DimNameDiff<R, U1>>,
 	{
 		FrameN::<N, R>::from_velocity(self)
+	}
+
+	#[inline]
+	fn from_split<D>(temporal: &N, spatial: &VectorN<N, DimNameDiff<D, U1>>)
+	-> VectorN<N, D>
+	where
+		D: DimNameSub<U1>,
+		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
+		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
+		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
+			StorageMut<N, D, U1, RStride = U1, CStride = D>,
+	{
+		let mut v = unsafe { VectorN::<N, D>::new_uninitialized() };
+		*v.temporal_mut() = *temporal;
+		v.spatial_mut().copy_from(spatial);
+		v
+	}
+
+	#[inline]
+	fn split(&self) -> (&N, MatrixSliceMN<N, DimNameDiff<R, U1>, C, U1, R>)
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+		DefaultAllocator: Allocator<N, R, C>,
+		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
+			Storage<N, R, C, RStride = U1, CStride = R>,
+	{
+		(self.temporal(), self.spatial())
+	}
+
+	#[inline]
+	fn split_mut(&mut self)
+	-> (&mut N, MatrixSliceMutMN<N, DimNameDiff<R, U1>, C>)
+	where
+		R: DimNameSub<U1>,
+		ShapeConstraint: DimEq<U1, C>,
+		DefaultAllocator: Allocator<N, R, C>,
+		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
+			Storage<N, R, C, RStride = U1, CStride = R>,
+	{
+		let (temporal, spatial) = self.as_mut_slice().split_at_mut(1);
+		(
+			unsafe { temporal.get_unchecked_mut(0) },
+			MatrixSliceMutMN::<N, DimNameDiff<R, U1>, C>::from_slice(spatial),
+		)
 	}
 
 	#[inline]
@@ -1035,15 +1098,16 @@ where
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, D>,
 {
-	/// Momentum with `energy` as temporal and `momentum` as spatial components.
+	/// Momentum with `energy` and `momentum` spacetime split.
 	#[inline]
-	pub fn new(energy: &N, momentum: &VectorN<N, DimNameDiff<D, U1>>) -> Self
+	pub fn from_split(energy: &N, momentum: &VectorN<N, DimNameDiff<D, U1>>)
+	-> Self
 	where
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
 			StorageMut<N, D, U1, RStride = U1, CStride = D>,
 	{
-		Self { momentum: VectorN::<N, D>::new(energy, momentum) }
+		Self { momentum: VectorN::<N, D>::from_split(energy, momentum) }
 	}
 
 	/// Momentum with rest `mass` at `velocity` as `velocity * mass`.

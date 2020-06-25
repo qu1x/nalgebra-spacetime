@@ -278,6 +278,17 @@ where
 	/// $$
 	/// F^{\mu' \nu'} = \Lmu F^{\mu \nu} \Lnu
 	/// $$
+	///
+	/// ```
+	/// use nalgebra::{Vector3, Vector4, Matrix4};
+	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
+	/// use approx::assert_ulps_eq;
+	///
+	/// let event = Vector4::new_random();
+	/// let frame = Frame4::from_beta(Vector3::new(0.3, -0.4, 0.6));
+	/// let boost = Matrix4::new_boost(&frame);
+	/// assert_ulps_eq!(boost * event, event.boost(&frame));
+	/// ```
 	fn new_boost<D>(frame: &FrameN<N, D>) -> Self
 	where
 		D: DimNameSub<U1>,

@@ -288,7 +288,7 @@ where
 	/// along $\hat u$ with $\zeta$.
 	///
 	/// ```
-	/// use nalgebra::{Vector3, Vector4, Matrix4};
+	/// use nalgebra::{Vector3, Vector4};
 	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
 	/// use approx::assert_ulps_eq;
 	///
@@ -323,6 +323,28 @@ where
 	/// $$
 	///
 	/// Equals relativistic velocity addition $v \oplus u$ in case $x \equiv v$.
+	///
+	/// ```
+	/// use nalgebra::Vector4;
+	/// use nalgebra_spacetime::LorentzianMN;
+	/// use approx::assert_ulps_eq;
+	///
+	/// // Arbitrary timelike four momentum.
+	/// let mut momentum = Vector4::new(90.0, 5.0, 6.0, 7.0);
+	///
+	/// // Invariant rest mass.
+	/// let mass = momentum.timelike_norm();
+	/// // Trivial four momentum.
+	/// let mass_at_rest = Vector4::new(mass, 0.0, 0.0, 0.0);
+	///
+	/// // Four velocity.
+	/// let velocity = momentum / mass;
+	/// // Four momentum boosted to its own frame.
+	/// momentum.boost_mut(&velocity.frame());
+	///
+	/// // Four momentum boosted to its own frame is a trivial four momentum.
+	/// assert_ulps_eq!(momentum, mass_at_rest, epsilon = 1e-15);
+	/// ```
 	fn boost_mut<D>(&mut self, frame: &FrameN<N, D>)
 	where
 		D: DimNameSub<U1>,

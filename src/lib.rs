@@ -334,8 +334,6 @@ where
 	/// \end{pmatrix}
 	/// $$
 	///
-	/// Equals relativistic velocity addition $v \oplus u$ in case $x \equiv v$.
-	///
 	/// ```
 	/// use nalgebra::Vector4;
 	/// use nalgebra_spacetime::LorentzianMN;
@@ -491,6 +489,7 @@ where
 		m
 	}
 
+	#[inline]
 	fn dual_mut(&mut self) {
 		if R::is::<U1>() || C::is::<U1>() {
 			neg(self.get_mut(0).unwrap());
@@ -509,12 +508,14 @@ where
 		}
 	}
 
+	#[inline]
 	fn r_dual_mut(&mut self) {
 		for c in 0..C::dim() {
 			neg(self.get_mut((0, c)).unwrap());
 		}
 	}
 
+	#[inline]
 	fn c_dual_mut(&mut self) {
 		for r in 0..R::dim() {
 			neg(self.get_mut((r, 0)).unwrap());

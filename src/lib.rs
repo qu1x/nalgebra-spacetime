@@ -1141,7 +1141,7 @@ where
 
 	/// Momentum with rest `mass` as temporal component.
 	#[inline]
-	pub fn from_mass_at_rest(mass: N) -> Self {
+	pub fn from_mass(mass: N) -> Self {
 		let mut momentum = VectorN::<N, D>::zeros();
 		*momentum.temporal_mut() = mass;
 		Self { momentum }

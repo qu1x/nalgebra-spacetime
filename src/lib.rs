@@ -1097,7 +1097,7 @@ where
 /// Assuming unit system with speed of light $c=1$ and rest mass $m$ as in:
 ///
 /// $$
-/// m^2=E^2-\vec{p}^2=-p_\mu p^\mu
+/// m^2=E^2-\vec {p}^2=-p_\mu p^\mu
 /// $$
 ///
 /// Where $p^\mu$ is the $n$-momentum in spacelike sign convention with energy
@@ -1118,7 +1118,7 @@ where
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, D>,
 {
-	/// Momentum with `energy` and `momentum` spacetime `split()`.
+	/// Momentum with spacetime `split()`, `energy` $E$ and `momentum` $\vec p$.
 	#[inline]
 	pub fn from_split(energy: &N, momentum: &VectorN<N, DimNameDiff<D, U1>>)
 	-> Self
@@ -1130,7 +1130,7 @@ where
 		Self { momentum: VectorN::<N, D>::from_split(energy, momentum) }
 	}
 
-	/// Momentum with rest `mass` at `velocity` as `velocity * mass`.
+	/// Momentum $p^\mu=m u^\mu$ with rest `mass` $m$ at `velocity` $u^\mu$.
 	#[inline]
 	pub fn from_mass_at_velocity(mass: N, velocity: VectorN<N, D>) -> Self
 	where
@@ -1139,7 +1139,9 @@ where
 		Self { momentum: velocity * mass }
 	}
 
-	/// Momentum with rest `mass` in `frame` as `frame.velocity() * mass`.
+	/// Momentum $p^\mu$ with rest `mass` $m$ in `frame`.
+	///
+	/// Equals `frame.velocity() * mass`.
 	#[inline]
 	pub fn from_mass_in_frame(mass: N, frame: FrameN<N, D>) -> Self
 	where
@@ -1148,7 +1150,7 @@ where
 		Self::from_mass_at_velocity(mass, frame.velocity())
 	}
 
-	/// Momentum with rest `mass` in center-of-momentum frame.
+	/// Momentum $p^\mu$ with rest `mass` $m$ in center-of-momentum frame.
 	#[inline]
 	pub fn from_mass_at_rest(mass: N) -> Self {
 		let mut momentum = VectorN::<N, D>::zeros();
@@ -1156,24 +1158,24 @@ where
 		Self { momentum }
 	}
 
-	/// Rest mass as timelike norm.
+	/// Rest mass $m$ as timelike norm $\sqrt{-p_\mu p^\mu}$.
 	#[inline]
 	pub fn mass(&self) -> N {
 		self.momentum.timelike_norm()
 	}
 
-	/// Velocity as momentum divided by rest `mass()`.
+	/// Velocity $u^\mu$ as momentum $p^\mu$ divided by rest `mass()` $m$.
 	pub fn velocity(&self) -> VectorN<N, D> {
 		self.momentum.clone() / self.mass()
 	}
 
-	/// Energy as `temporal()` component.
+	/// Energy $E$ as `temporal()` component.
 	#[inline]
 	pub fn energy(&self) -> &N {
 		self.momentum.temporal()
 	}
 
-	/// Momentum as `spatial()` components.
+	/// Momentum $\vec p$ as `spatial()` components.
 	#[inline]
 	pub fn momentum(&self) -> VectorSliceN<N, DimNameDiff<D, U1>, U1, D>
 	where

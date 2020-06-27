@@ -1,8 +1,13 @@
+# Version 0.2.1 (2020-06-27)
+
+  * Fix `FrameN::compose()` order.
+  * Add `Frame4::rotation()` test.
+
 # Version 0.2.0 (2020-06-27)
 
   * Overall avoid `unsafe` code without reasoning via benchmarks.
   * Add spacetime `split()/from_split()` and `split_mut()`.
-  * Improve `axis_angle()` test.
+  * Improve `Frame4::axis_angle()` test.
   * Add `boost_mut()` test.
   * Add `Momentum4` (incomplete).
   * Add `temporal()` and `spatial()` methods.

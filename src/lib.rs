@@ -993,10 +993,12 @@ where
 	/// let ucv = u.compose(&v).axis();
 	/// let vcu = v.compose(&u).axis();
 	///
-	/// let (axis, angle) = v.axis_angle(&u);
+	/// let (axis, angle) = u.axis_angle(&v);
+	/// let axis = axis.into_inner();
 	///
 	/// assert_abs_diff_ne!(angle, 0.0, epsilon = 1e-15);
 	/// assert_ulps_eq!(angle, ucv.angle(&vcu), epsilon = 1e-15);
+	/// assert_ulps_eq!(axis, ucv.cross(&vcu).normalize(), epsilon = 1e-15);
 	/// ```
 	pub fn axis_angle(&self, frame: &Self) -> (Unit<Vector3<N>>, N) {
 		let (u, v) = (self, frame);

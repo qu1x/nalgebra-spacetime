@@ -1034,7 +1034,7 @@ where
 	/// let rotation_ucv = u.rotation(&v);
 	///
 	/// assert_ulps_ne!(boost_ucv, boost_v * boost_u);
-	/// assert_ulps_ne!(boost_vcu, boost_v * boost_u);
+	/// assert_ulps_ne!(boost_vcu, boost_u * boost_v);
 	/// assert_ulps_eq!(rotation_ucv * boost_ucv, boost_v * boost_u);
 	/// assert_ulps_eq!(boost_vcu * rotation_ucv, boost_v * boost_u);
 	/// ```

@@ -42,7 +42,7 @@ API Documentation with KaTeX: [stable] | [master]
   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
   * Spacetime algebra (STA) as special case of `CliffordMN` space.
 
-# Pseudo-Local Documentation Builds
+# Pseudo-local Documentation Builds
 
 ```sh
 # Build and open documentation inclusive dependencies.

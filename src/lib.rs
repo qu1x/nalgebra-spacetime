@@ -1200,6 +1200,30 @@ where
 	}
 }
 
+impl<N, D> From<VectorN<N, D>> for MomentumN<N, D>
+where
+	N: SimdRealField + Signed + Real,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, D>,
+{
+	#[inline]
+	fn from(momentum: VectorN<N, D>) -> Self {
+		Self { momentum }
+	}
+}
+
+impl<N, D> From<MomentumN<N, D>> for VectorN<N, D>
+where
+	N: SimdRealField + Signed + Real,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, D>,
+{
+	#[inline]
+	fn from(momentum: MomentumN<N, D>) -> Self {
+		momentum.momentum
+	}
+}
+
 impl<N, D> Add<Self> for MomentumN<N, D>
 where
 	N: SimdRealField + Signed + Real,

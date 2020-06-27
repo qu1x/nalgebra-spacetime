@@ -288,7 +288,7 @@ where
 	/// let event = Vector4::new_random();
 	/// let frame = Frame4::from_beta(Vector3::new(0.3, -0.4, 0.6));
 	/// let boost = Matrix4::new_boost(&frame);
-	/// assert_ulps_eq!(boost * event, event.boost(&frame));
+	/// assert_ulps_eq!(boost * event, event.boost(&frame), epsilon = 1e-14);
 	/// ```
 	fn new_boost<D>(frame: &FrameN<N, D>) -> Self
 	where
@@ -936,13 +936,13 @@ where
 
 	/// Relativistic velocity addition `self`$\oplus$`frame`.
 	///
-	/// Equals `self.velocity().boost(&-frame).frame()`.
+	/// Equals `frame.velocity().boost(&-self.clone()).frame()`.
 	#[inline]
-	pub fn compose(&self, frame: Self) -> Self
+	pub fn compose(&self, frame: &Self) -> Self
 	where
 		DefaultAllocator: Allocator<N, D>,
 	{
-		self.velocity().boost(&-frame).frame()
+		frame.velocity().boost(&-self.clone()).frame()
 	}
 }
 
@@ -985,18 +985,18 @@ where
 	/// ```
 	/// use nalgebra::Vector3;
 	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
-	/// use approx::{assert_abs_diff_ne, assert_relative_eq};
+	/// use approx::{assert_abs_diff_ne, assert_ulps_eq};
 	///
 	/// let u = Frame4::from_beta(Vector3::new(0.18, 0.73, 0.07));
 	/// let v = Frame4::from_beta(Vector3::new(0.41, 0.14, 0.25));
 	///
-	/// let ucv = u.compose(v).axis();
-	/// let vcu = v.compose(u).axis();
+	/// let ucv = u.compose(&v).axis();
+	/// let vcu = v.compose(&u).axis();
 	///
 	/// let (axis, angle) = v.axis_angle(&u);
 	///
 	/// assert_abs_diff_ne!(angle, 0.0, epsilon = 1e-15);
-	/// assert_relative_eq!(angle, ucv.angle(&vcu), epsilon = 1e-15);
+	/// assert_ulps_eq!(angle, ucv.angle(&vcu), epsilon = 1e-15);
 	/// ```
 	pub fn axis_angle(&self, frame: &Self) -> (Unit<Vector3<N>>, N) {
 		let (u, v) = (self, frame);
@@ -1015,6 +1015,29 @@ where
 	/// of the boost composition `self`$\oplus$`frame`.
 	///
 	/// See `axis_angle()` for further details.
+	///
+	/// ```
+	/// use nalgebra::{Vector3, Matrix4};
+	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
+	/// use approx::{assert_ulps_eq, assert_ulps_ne};
+	///
+	/// let u = Frame4::from_beta(Vector3::new(0.18, 0.73, 0.07));
+	/// let v = Frame4::from_beta(Vector3::new(0.41, 0.14, 0.25));
+	/// let ucv = u.compose(&v);
+	/// let vcu = v.compose(&u);
+	///
+	/// let boost_u = Matrix4::new_boost(&u);
+	/// let boost_v = Matrix4::new_boost(&v);
+	/// let boost_ucv = Matrix4::new_boost(&ucv);
+	/// let boost_vcu = Matrix4::new_boost(&vcu);
+	///
+	/// let rotation_ucv = u.rotation(&v);
+	///
+	/// assert_ulps_ne!(boost_ucv, boost_v * boost_u);
+	/// assert_ulps_ne!(boost_vcu, boost_v * boost_u);
+	/// assert_ulps_eq!(rotation_ucv * boost_ucv, boost_v * boost_u);
+	/// assert_ulps_eq!(boost_vcu * rotation_ucv, boost_v * boost_u);
+	/// ```
 	pub fn rotation(&self, frame: &Self) -> Matrix4<N>
 	where
 		N::Element: SimdRealField,
@@ -1079,7 +1102,7 @@ where
 
 	#[inline]
 	fn add(self, rhs: Self) -> Self::Output {
-		self.compose(rhs)
+		self.compose(&rhs)
 	}
 }
 

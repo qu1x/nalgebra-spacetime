@@ -339,20 +339,20 @@ where
 	/// use nalgebra_spacetime::LorentzianMN;
 	/// use approx::assert_ulps_eq;
 	///
-	/// // Arbitrary timelike four momentum.
+	/// // Arbitrary timelike four-momentum.
 	/// let mut momentum = Vector4::new(24.3, 5.22, 16.8, 9.35);
 	///
-	/// // Invariant rest mass.
+	/// // Rest mass.
 	/// let mass = momentum.timelike_norm();
-	/// // Trivial four momentum.
+	/// // Four-momentum in center-of-momentum frame.
 	/// let mass_at_rest = Vector4::new(mass, 0.0, 0.0, 0.0);
 	///
-	/// // Four velocity.
+	/// // Rest mass is ratio of four-momentum to four-velocity.
 	/// let velocity = momentum / mass;
-	/// // Four momentum boosted to its own frame.
+	/// // Four-momentum boosted to center-of-momentum frame.
 	/// momentum.boost_mut(&velocity.frame());
 	///
-	/// // Four momentum boosted to its own frame is a trivial four momentum.
+	/// // Verify boosting four-momentum to center-of-momentum frame.
 	/// assert_ulps_eq!(momentum, mass_at_rest, epsilon = 1e-14);
 	/// ```
 	fn boost_mut<D>(&mut self, frame: &FrameN<N, D>)
@@ -1109,7 +1109,7 @@ where
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, D>,
 {
-	/// Momentum with `energy` and `momentum` spacetime split.
+	/// Momentum with `energy` and `momentum` spacetime `split()`.
 	#[inline]
 	pub fn from_split(energy: &N, momentum: &VectorN<N, DimNameDiff<D, U1>>)
 	-> Self
@@ -1130,18 +1130,18 @@ where
 		Self { momentum: velocity * mass }
 	}
 
-	/// Momentum with rest `mass` at `frame` as `frame.velocity() * mass`.
+	/// Momentum with rest `mass` in `frame` as `frame.velocity() * mass`.
 	#[inline]
-	pub fn from_mass_at_frame(mass: N, frame: FrameN<N, D>) -> Self
+	pub fn from_mass_in_frame(mass: N, frame: FrameN<N, D>) -> Self
 	where
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 	{
 		Self::from_mass_at_velocity(mass, frame.velocity())
 	}
 
-	/// Momentum with rest `mass` as temporal component.
+	/// Momentum with rest `mass` in center-of-momentum frame.
 	#[inline]
-	pub fn from_mass(mass: N) -> Self {
+	pub fn from_mass_at_rest(mass: N) -> Self {
 		let mut momentum = VectorN::<N, D>::zeros();
 		*momentum.temporal_mut() = mass;
 		Self { momentum }
@@ -1158,13 +1158,13 @@ where
 		self.momentum.clone() / self.mass()
 	}
 
-	/// Energy as temporal component.
+	/// Energy as `temporal()` component.
 	#[inline]
 	pub fn energy(&self) -> &N {
 		self.momentum.temporal()
 	}
 
-	/// Momentum as spatial components.
+	/// Momentum as `spatial()` components.
 	#[inline]
 	pub fn momentum(&self) -> VectorSliceN<N, DimNameDiff<D, U1>, U1, D>
 	where

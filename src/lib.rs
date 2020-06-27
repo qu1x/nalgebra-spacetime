@@ -1094,14 +1094,26 @@ where
 
 /// Momentum in $n$-dimensional Lorentzian space $\R^{-,+} = \R^{1,n-1}$.
 ///
-/// Assuming unit system with speed of light $c=1$ and rest mass $m$ as in:
+/// Assuming unit system with speed of light $c=1$ and rest mass $m$ as
+/// timelike norm in spacelike sign convention as in:
 ///
 /// $$
 /// m^2=E^2-\vec {p}^2=-p_\mu p^\mu
 /// $$
 ///
-/// Where $p^\mu$ is the $n$-momentum in spacelike sign convention with energy
-/// $E$ as temporal and momentum $\vec p$ as spatial components.
+/// Where $p^\mu$ is the $n$-momentum with energy $E$ as temporal $p^0$ and
+/// momentum $\vec p$ as spatial $p^i$ components:
+///
+/// $$
+/// p^\mu = m u^\mu = m \begin{pmatrix}
+///   \gamma \\\\ \gamma \vec \beta
+/// \end{pmatrix} = \begin{pmatrix}
+///   \gamma m = E \\\\ \gamma m \vec \beta = \vec p
+/// \end{pmatrix}
+/// $$
+///
+/// With $n$-velocity $u^\mu$, Lorentz factor $\gamma$, and velocity ratio
+/// $\vec \beta$.
 #[derive(Debug, PartialEq, Clone)]
 pub struct MomentumN<N, D>
 where
@@ -1158,7 +1170,8 @@ where
 		Self { momentum }
 	}
 
-	/// Rest mass $m$ as timelike norm $\sqrt{-p_\mu p^\mu}$.
+	/// Rest mass $m$ as timelike norm $\sqrt{-p_\mu p^\mu}$ in spacelike sign
+	/// convention.
 	#[inline]
 	pub fn mass(&self) -> N {
 		self.momentum.timelike_norm()

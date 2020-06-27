@@ -9,6 +9,11 @@
   * Fix signature of norm methods.
   * Clean up trait bounds.
 
+# Version 0.1.2 (2020-06-17)
+
+  * Fix possible unsound iteration.
+  * Simplify `interval()`.
+
 # Version 0.1.1 (2020-06-08)
 
   * Fix `contr()` and `tr_contr()`.

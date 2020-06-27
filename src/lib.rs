@@ -1093,6 +1093,15 @@ where
 }
 
 /// Momentum in $n$-dimensional Lorentzian space $\R^{-,+} = \R^{1,n-1}$.
+///
+/// Assuming unit system with speed of light $c=1$ and rest mass $m$ as in:
+///
+/// $$
+/// m^2=E^2-\vec{p}^2=-p_\mu p^\mu
+/// $$
+///
+/// Where $p^\mu$ is the $n$-momentum in spacelike sign convention with energy
+/// $E$ as temporal and momentum $\vec p$ as spatial components.
 #[derive(Debug, PartialEq, Clone)]
 pub struct MomentumN<N, D>
 where

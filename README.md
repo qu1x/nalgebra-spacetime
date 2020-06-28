@@ -25,7 +25,7 @@ API Documentation with KaTeX: [stable] | [master]
 
 # Present Features
 
-  * Minkowski space as special case of `LorentzianMN` space.
+  * Minkowski space as special case of `LorentzianN` space.
   * Raising/Lowering tensor indices: `dual()`/`r_dual()`/`c_dual()`.
   * Metric contraction of degree-1/degree-2 tensors: `contr()`/`scalar()`.
   * Spacetime `interval()` with `LightCone` depiction.
@@ -40,7 +40,7 @@ API Documentation with KaTeX: [stable] | [master]
   * Categorize `Rotation4`/`PureBoost4`/`...` as `Boost4`/`...`.
   * Wigner `rotation()` and `axis_angle()` of an already-composed `Boost4`.
   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
-  * Spacetime algebra (STA) as special case of `CliffordMN` space.
+  * Spacetime algebra (STA) as special case of `CliffordN` space.
 
 # Pseudo-local Documentation Builds
 

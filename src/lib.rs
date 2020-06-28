@@ -4,7 +4,7 @@
 //!
 //! # Present Features
 //!
-//!   * Minkowski space as special case of `LorentzianMN` space.
+//!   * Minkowski space as special case of `LorentzianN` space.
 //!   * Raising/Lowering tensor indices: `dual()`/`r_dual()`/`c_dual()`.
 //!   * Metric contraction of degree-1/degree-2 tensors: `contr()`/`scalar()`.
 //!   * Spacetime `interval()` with `LightCone` depiction.
@@ -19,7 +19,7 @@
 //!   * Categorize `Rotation4`/`PureBoost4`/`...` as `Boost4`/`...`.
 //!   * Wigner `rotation()` and `axis_angle()` of an already-composed `Boost4`.
 //!   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
-//!   * Spacetime algebra (STA) as special case of `CliffordMN` space.
+//!   * Spacetime algebra (STA) as special case of `CliffordN` space.
 
 #![forbid(unsafe_code)]
 #![forbid(missing_docs)]
@@ -53,7 +53,7 @@ use LightCone::*;
 ///
 /// A statically sized column-major matrix whose `R` rows and `C` columns
 /// coincide with degree-1/degree-2 tensor indices.
-pub trait LorentzianMN<N, R, C>
+pub trait LorentzianN<N, R, C>
 where
 	N: Scalar,
 	R: DimName,
@@ -88,7 +88,7 @@ where
 	/// components $x^i$ with Latin alphabet indices starting from $i=1$.
 	/// ```
 	/// use nalgebra::{Vector4, Matrix4};
-	/// use nalgebra_spacetime::LorentzianMN;
+	/// use nalgebra_spacetime::LorentzianN;
 	/// use approx::assert_ulps_eq;
 	///
 	/// let eta = Matrix4::<f64>::metric();
@@ -282,7 +282,7 @@ where
 	///
 	/// ```
 	/// use nalgebra::{Vector3, Vector4, Matrix4};
-	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
+	/// use nalgebra_spacetime::{LorentzianN, Frame4};
 	/// use approx::assert_ulps_eq;
 	///
 	/// let event = Vector4::new_random();
@@ -301,7 +301,7 @@ where
 	///
 	/// ```
 	/// use nalgebra::{Vector3, Vector4};
-	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
+	/// use nalgebra_spacetime::{LorentzianN, Frame4};
 	/// use approx::assert_ulps_eq;
 	///
 	/// let muon_lifetime_at_rest = Vector4::new(2.2e-6, 0.0, 0.0, 0.0);
@@ -336,7 +336,7 @@ where
 	///
 	/// ```
 	/// use nalgebra::Vector4;
-	/// use nalgebra_spacetime::LorentzianMN;
+	/// use nalgebra_spacetime::LorentzianN;
 	/// use approx::assert_ulps_eq;
 	///
 	/// // Arbitrary timelike four-momentum.
@@ -398,7 +398,7 @@ where
 	///
 	/// ```
 	/// use nalgebra::Vector4;
-	/// use nalgebra_spacetime::LorentzianMN;
+	/// use nalgebra_spacetime::LorentzianN;
 	/// use approx::assert_ulps_eq;
 	///
 	/// let mut spacetime = Vector4::new(1.0, 2.0, 3.0, 4.0);
@@ -451,7 +451,7 @@ where
 			StorageMut<N, R, C, RStride = U1, CStride = R>;
 }
 
-impl<N, R, C> LorentzianMN<N, R, C> for MatrixMN<N, R, C>
+impl<N, R, C> LorentzianN<N, R, C> for MatrixMN<N, R, C>
 where
 	N: SimdRealField + Signed + Real,
 	R: DimName,
@@ -984,7 +984,7 @@ where
 	///
 	/// ```
 	/// use nalgebra::Vector3;
-	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
+	/// use nalgebra_spacetime::{LorentzianN, Frame4};
 	/// use approx::{assert_abs_diff_ne, assert_ulps_eq};
 	///
 	/// let u = Frame4::from_beta(Vector3::new(0.18, 0.73, 0.07));
@@ -1020,7 +1020,7 @@ where
 	///
 	/// ```
 	/// use nalgebra::{Vector3, Matrix4};
-	/// use nalgebra_spacetime::{LorentzianMN, Frame4};
+	/// use nalgebra_spacetime::{LorentzianN, Frame4};
 	/// use approx::{assert_ulps_eq, assert_ulps_ne};
 	///
 	/// let u = Frame4::from_beta(Vector3::new(0.18, 0.73, 0.07));

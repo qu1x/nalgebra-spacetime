@@ -959,7 +959,7 @@ where
 	/// \gdef \Ruv {R^{\mu''}\_{\phantom {\mu''} \mu'} (\epsilon)}
 	/// \gdef \Luv {\Lambda^{\mu''}\_{\phantom {\mu''} \mu} (\vec \beta_{\Puv})}
 	/// $
-	/// Wigner rotation axis $\hat \beta_u \times \hat \beta_v$ and angle
+	/// Wigner rotation axis $\widehat {\beta_u \times \beta_v}$ and angle
 	/// $\epsilon$ of the boost composition `self`$\oplus$`frame`.
 	///
 	/// The composition of two pure boosts, $\Bu$ to `self` followed by $\Bv$
@@ -1013,7 +1013,7 @@ where
 		(axis, (sum / prod * bg * sin).asin())
 	}
 
-	/// Wigner rotation matrix $R(\hat \beta_u \times \hat \beta_v, \epsilon)$
+	/// Wigner rotation matrix $R(\widehat {\beta_u \times \beta_v}, \epsilon)$
 	/// of the boost composition `self`$\oplus$`frame`.
 	///
 	/// See `axis_angle()` for further details.

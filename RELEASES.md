@@ -1,3 +1,8 @@
+# Version 0.2.2 (2020-08-28)
+
+  * Fix `num-traits` features.
+  * Update `nalgebra` and `katex`.
+
 # Version 0.2.1 (2020-06-27)
 
   * Fix `FrameN::compose()` order.

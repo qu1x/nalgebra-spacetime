@@ -1,3 +1,7 @@
+# Version 0.2.3 (2021-01-08)
+
+  * Update `nalgebra` and `approx`.
+
 # Version 0.2.2 (2020-08-28)
 
   * Fix `num-traits` features.

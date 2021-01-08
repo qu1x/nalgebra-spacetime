@@ -4,20 +4,24 @@
 //!
 //! # Present Features
 //!
-//!   * Minkowski space as special case of `LorentzianN` space.
-//!   * Raising/Lowering tensor indices: `dual()`/`r_dual()`/`c_dual()`.
-//!   * Metric contraction of degree-1/degree-2 tensors: `contr()`/`scalar()`.
-//!   * Spacetime `interval()` with `LightCone` depiction.
-//!   * Inertial `FrameN` of reference holding boost parameters.
-//!   * Lorentz boost as `new_boost()` matrix.
-//!   * Direct Lorentz `boost()` to `compose()` velocities.
-//!   * Wigner `rotation()` and `axis_angle()` between to-be-composed boosts.
+//!   * Minkowski space as special case of [`LorentzianN`] space.
+//!   * Raising/Lowering tensor indices:
+//!     [`LorentzianN::dual`]/[`LorentzianN::r_dual`]/[`LorentzianN::c_dual`].
+//!   * Metric contraction of degree-1/degree-2 tensors:
+//!     [`LorentzianN::contr`]/[`LorentzianN::scalar`].
+//!   * Spacetime [`LorentzianN::interval`] with [`LightCone`] depiction.
+//!   * Inertial [`FrameN`] of reference holding boost parameters.
+//!   * Lorentz boost as [`LorentzianN::new_boost`] matrix.
+//!   * Direct Lorentz [`LorentzianN::boost`] to [`FrameN::compose`] velocities.
+//!   * Wigner [`FrameN::rotation`] and [`FrameN::axis_angle`] between
+//!     to-be-composed boosts.
 //!
 //! # Future Features
 //!
 //!   * `Event4`/`Velocity4`/`Momentum4`/`...` equivalents of `Point4`/`...`.
 //!   * Categorize `Rotation4`/`PureBoost4`/`...` as `Boost4`/`...`.
-//!   * Wigner `rotation()` and `axis_angle()` of an already-composed `Boost4`.
+//!   * Wigner [`FrameN::rotation`] and [`FrameN::axis_angle`] of an
+//!     already-composed `Boost4`.
 //!   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
 //!   * Spacetime algebra (STA) as special case of `CliffordN` space.
 
@@ -71,8 +75,9 @@ where
 	///
 	/// Avoid matrix multiplication by preferring:
 	///
-	///   * `dual()`, `r_dual()` or `c_dual()` and their in-place counterparts
-	///   * `dual_mut()`, `r_dual_mut()` or `c_dual_mut()`.
+	///   * [`Self::dual`], [`Self::r_dual`] or [`Self::c_dual`] and their
+	///     in-place counterparts
+	///   * [`Self::dual_mut`], [`Self::r_dual_mut`] or [`Self::c_dual_mut`].
 	///
 	/// The spacelike sign convention $\R^{-,+} = \R^{1,n-1}$ requires less
 	/// negations than its timelike alternative $\R^{+,-} = \R^{1,n-1}$. In four
@@ -116,12 +121,12 @@ where
 
 	/// Raises/Lowers its degree-1/degree-2 *row* tensor index.
 	///
-	/// Prefer `dual()` over `self.r_dual().c_dual()` to half negations.
+	/// Prefer [`Self::dual`] over `self.r_dual().c_dual()` to half negations.
 	fn r_dual(&self) -> Self;
 
 	/// Raises/Lowers its degree-1/degree-2 *column* tensor index.
 	///
-	/// Prefer `dual()` over `self.r_dual().c_dual()` to half negations.
+	/// Prefer [`Self::dual`] over `self.r_dual().c_dual()` to half negations.
 	fn c_dual(&self) -> Self;
 
 	/// Raises/Lowers *all* of its degree-1/degree-2 tensor indices *in-place*.
@@ -131,12 +136,14 @@ where
 
 	/// Raises/Lowers its degree-1/degree-2 *row* tensor index *in-place*.
 	///
-	/// Prefer `dual()` over `self.r_dual_mut().c_dual_mut()` to half negations.
+	/// Prefer [`Self::dual`] over `self.r_dual_mut().c_dual_mut()` to half
+	/// negations.
 	fn r_dual_mut(&mut self);
 
 	/// Raises/Lowers its degree-1/degree-2 *column* tensor index *in-place*.
 	///
-	/// Prefer `dual()` over `self.r_dual_mut().c_dual_mut()` to half negations.
+	/// Prefer [`Self::dual`] over `self.r_dual_mut().c_dual_mut()` to half
+	/// negations.
 	fn c_dual_mut(&mut self);
 
 	/// Lorentzian matrix multiplication of degree-1/degree-2 tensors.
@@ -152,7 +159,7 @@ where
 		ShapeConstraint: AreMultipliable<R, C, R2, C2>,
 		DefaultAllocator: Allocator<N, R, C2>;
 
-	/// Same as `contr()` but with transposed tensor indices.
+	/// Same as [`Self::contr`] but with transposed tensor indices.
 	///
 	/// Equals `self.r_dual().tr_mul(rhs)`, the metric contraction of its
 	/// *transposed row* index with `rhs`'s *row* index.
@@ -177,7 +184,7 @@ where
 	///   * Minkowski inner product,
 	///   * relativistic dot product,
 	///   * Lorentz scalar, invariant under Lorentz transformations, or
-	///   * spacetime interval between two events, see `interval()`.
+	///   * spacetime interval between two events, see [`Self::interval`].
 	fn scalar<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
 	where
 		R2: Dim,
@@ -185,7 +192,7 @@ where
 		SB: Storage<N, R2, C2>,
 		ShapeConstraint: DimEq<R, R2> + DimEq<C, C2>;
 
-	/// Same as `scalar()` but with transposed tensor indices.
+	/// Same as [`Self::scalar`] but with transposed tensor indices.
 	///
 	/// Equals `self.dual().tr_dot(rhs)`.
 	fn tr_scalar<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
@@ -211,7 +218,8 @@ where
 
 	/// Spacetime interval between two events and region of `self`'s light cone.
 	///
-	/// Same as `interval_fn()` but with `N::default_epsilon()` as in:
+	/// Same as [`Self::interval_fn`] but with [`AbsDiffEq::default_epsilon`] as
+	/// in:
 	///
 	///   * `is_present = |time| abs_diff_eq!(time, N::zero())`, and
 	///   * `is_lightlike = |interval| abs_diff_eq!(interval, N::zero())`.
@@ -233,9 +241,8 @@ where
 	/// Their signs are only evaluated in the `false` branches of `is_present`
 	/// and `is_lightlike`.
 	///
-	/// See `interval()` for using defaults and [approx] for further details.
-	///
-	/// [approx]: https://docs.rs/approx
+	/// See [`Self::interval`] for using defaults and [`approx`] for further
+	/// details.
 	fn interval_fn<P, L>(&self, rhs: &Self,
 		is_present: P, is_lightlike: L)
 	-> (N, LightCone)
@@ -385,7 +392,7 @@ where
 		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
 			StorageMut<N, D, U1, RStride = U1, CStride = D>;
 
-	/// Spacetime split into `temporal()` and `spatial()`.
+	/// Spacetime split into [`Self::temporal`] and [`Self::spatial`].
 	fn split(&self) -> (&N, MatrixSliceMN<N, DimNameDiff<R, U1>, C, U1, R>)
 	where
 		R: DimNameSub<U1>,
@@ -394,7 +401,8 @@ where
 		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
 			Storage<N, R, C, RStride = U1, CStride = R>;
 
-	/// Mutable spacetime split into `temporal_mut()` and `spatial_mut()`.
+	/// Mutable spacetime split into [`Self::temporal_mut`] and
+	/// [`Self::spatial_mut`].
 	///
 	/// ```
 	/// use nalgebra::Vector4;
@@ -813,8 +821,8 @@ pub type Frame4<N> = FrameN<N, U4>;
 ///
 /// Holds a statically sized direction axis $\hat u \in \R^{n-1}$ and two boost
 /// parameters precomputed from either velocity $u^\mu$, rapidity $\vec \zeta$,
-/// or velocity ratio $\vec \beta$ whether using `from_velocity()`,
-/// `from_zeta()`, or `from_beta()`:
+/// or velocity ratio $\vec \beta$ whether using [`Self::from_velocity`],
+/// [`Self::from_zeta`], or [`Self::from_beta`]:
 ///
 /// $$
 /// \cosh \zeta = \gamma
@@ -1016,7 +1024,7 @@ where
 	/// Wigner rotation matrix $R(\widehat {\vec \beta_u \times \vec \beta_v},
 	/// \epsilon)$ of the boost composition `self`$\oplus$`frame`.
 	///
-	/// See `axis_angle()` for further details.
+	/// See [`Self::axis_angle`] for further details.
 	///
 	/// ```
 	/// use nalgebra::{Vector3, Matrix4};
@@ -1155,7 +1163,8 @@ where
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, D>,
 {
-	/// Momentum with spacetime `split()`, `energy` $E$ and `momentum` $\vec p$.
+	/// Momentum with spacetime [`LorentzianN::split`], `energy` $E$ and
+	/// `momentum` $\vec p$.
 	#[inline]
 	pub fn from_split(energy: &N, momentum: &VectorN<N, DimNameDiff<D, U1>>)
 	-> Self
@@ -1207,13 +1216,13 @@ where
 		self.momentum.clone() / self.mass()
 	}
 
-	/// Energy $E$ as `temporal()` component.
+	/// Energy $E$ as [`LorentzianN::temporal`] component.
 	#[inline]
 	pub fn energy(&self) -> &N {
 		self.momentum.temporal()
 	}
 
-	/// Momentum $\vec p$ as `spatial()` components.
+	/// Momentum $\vec p$ as [`LorentzianN::spatial`] components.
 	#[inline]
 	pub fn momentum(&self) -> VectorSliceN<N, DimNameDiff<D, U1>, U1, D>
 	where

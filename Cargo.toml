@@ -35,6 +35,6 @@ rustdoc-args = [ "--html-in-header", "katex.html" ]
 travis-ci = { repository = "qu1x/nalgebra-spacetime" }
 
 [dependencies]
-nalgebra = "0.25"
+nalgebra = { version = "0.25", features = ["rand"] }
 num-traits = "0.2"
 approx = { version = "0.4", default-features = false }

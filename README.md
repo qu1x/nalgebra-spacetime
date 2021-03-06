@@ -8,7 +8,7 @@ Spacetime Extension for [nalgebra]
 [![Downloads][]](https://crates.io/crates/nalgebra-spacetime)
 [![Rust][]](https://www.rust-lang.org)
 [![Version][]](https://crates.io/crates/nalgebra-spacetime)
-[![Documentation][]](https://docs.rs/nalgebra-spacetime)
+[![Documentation][]](https://doc.qu1x.dev/nalgebra-spacetime)
 [![License][]](https://opensource.org/licenses/BSD-3-Clause)
 
 [Build Status]: https://travis-ci.org/qu1x/nalgebra-spacetime.svg

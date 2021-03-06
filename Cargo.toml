@@ -4,7 +4,7 @@ version = "0.2.3"
 authors = ["Rouven Spreckels <rs@qu1x.dev>"]
 edition = "2018"
 description = "Spacetime Extension for nalgebra"
-documentation = "https://docs.rs/nalgebra-spacetime"
+documentation = "https://doc.qu1x.dev/nalgebra-spacetime"
 repository = "https://github.com/qu1x/nalgebra-spacetime"
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -35,6 +35,6 @@ rustdoc-args = [ "--html-in-header", "katex.html" ]
 travis-ci = { repository = "qu1x/nalgebra-spacetime" }
 
 [dependencies]
-nalgebra = "0.24"
+nalgebra = "0.25"
 num-traits = "0.2"
 approx = { version = "0.4", default-features = false }

@@ -1,3 +1,7 @@
+# Version 0.2.4 (2021-03-06)
+
+  * Update `nalgebra`.
+
 # Version 0.2.3 (2021-01-08)
 
   * Use `intra_rustdoc_links`.

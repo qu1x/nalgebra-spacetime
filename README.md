@@ -46,8 +46,8 @@ cargo tex
 # Refresh opened documentation.
 ```
 
-With `cargo tex` defined in [.cargo/config](.cargo/config). Note that navigating the documentation
-requires web access as KaTeX is embedded via remote CDN.
+With `cargo tex` defined in [.cargo/config.toml](.cargo/config.toml). Note that navigating the
+documentation requires web access as KaTeX is embedded via remote CDN.
 
 # License
 

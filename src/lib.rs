@@ -13,42 +13,34 @@
 //!   * Inertial [`FrameN`] of reference holding boost parameters.
 //!   * Lorentz boost as [`LorentzianN::new_boost`] matrix.
 //!   * Direct Lorentz [`LorentzianN::boost`] to [`FrameN::compose`] velocities.
-//!   * Wigner [`FrameN::rotation`] and [`FrameN::axis_angle`] between
-//!     to-be-composed boosts.
+//!   * Wigner [`FrameN::rotation`] and [`FrameN::axis_angle`] between to-be-composed boosts.
 //!
 //! # Future Features
 //!
 //!   * `Event4`/`Velocity4`/`Momentum4`/`...` equivalents of `Point4`/`...`.
 //!   * Categorize `Rotation4`/`PureBoost4`/`...` as `Boost4`/`...`.
-//!   * Wigner [`FrameN::rotation`] and [`FrameN::axis_angle`] of an
-//!     already-composed `Boost4`.
+//!   * Wigner [`FrameN::rotation`] and [`FrameN::axis_angle`] of an already-composed `Boost4`.
 //!   * Distinguish pre/post-rotation and active/passive `Boost4` compositions.
-//!   * Spacetime algebra (STA) as special case of `CliffordN` space.
 
 #![forbid(unsafe_code)]
 #![forbid(missing_docs)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::type_complexity)]
 
-use std::ops::{Neg, Add, Sub};
+use approx::{abs_diff_eq, AbsDiffEq};
 use nalgebra::{
-	Unit, VectorN, Vector3, Matrix, MatrixMN, Matrix4, Rotation3,
-	VectorSliceN, MatrixSliceMN, MatrixSliceMutMN,
-	Scalar, SimdRealField,
-	Dim, DimName, DimNameSub, DimNameDiff,
+	base::allocator::Allocator,
 	base::dimension::{U1, U2, U3, U4},
 	constraint::{
+		AreMultipliable, DimEq, SameDimension, SameNumberOfColumns, SameNumberOfRows,
 		ShapeConstraint,
-		SameDimension,
-		SameNumberOfRows,
-		SameNumberOfColumns,
-		AreMultipliable,
-		DimEq,
 	},
-	storage::{Storage, StorageMut, Owned},
-	DefaultAllocator, base::allocator::Allocator,
+	storage::{Owned, RawStorage, RawStorageMut, Storage, StorageMut},
+	DefaultAllocator, Dim, DimName, DimNameDiff, DimNameSub, Matrix, Matrix4, MatrixView,
+	MatrixViewMut, OMatrix, OVector, Rotation3, Scalar, SimdRealField, Unit, Vector3, VectorView,
 };
-use num_traits::{sign::Signed, real::Real};
-use approx::{AbsDiffEq, abs_diff_eq};
-use LightCone::*;
+use num_traits::{real::Real, sign::Signed};
+use std::ops::{Add, Neg, Sub};
 
 /// Extension for $n$-dimensional Lorentzian space $\R^{-,+} = \R^{1,n-1}$ with
 /// metric signature in spacelike sign convention.
@@ -75,26 +67,24 @@ where
 	///
 	/// Avoid matrix multiplication by preferring:
 	///
-	///   * [`Self::dual`], [`Self::r_dual`] or [`Self::c_dual`] and their
-	///     in-place counterparts
+	///   * [`Self::dual`], [`Self::r_dual`] or [`Self::c_dual`] and their in-place counterparts
 	///   * [`Self::dual_mut`], [`Self::r_dual_mut`] or [`Self::c_dual_mut`].
 	///
-	/// The spacelike sign convention $\R^{-,+} = \R^{1,n-1}$ requires less
-	/// negations than its timelike alternative $\R^{+,-} = \R^{1,n-1}$. In four
-	/// dimensions or Minkowski space $\R^{-,+} = \R^{1,3}$ it requires:
+	/// The spacelike sign convention $\R^{-,+} = \R^{1,n-1}$ requires less negations than its
+	/// timelike alternative $\R^{+,-} = \R^{1,n-1}$. In four dimensions or Minkowski space
+	/// $\R^{-,+} = \R^{1,3}$ it requires:
 	///
 	///   * $n - 2 = 2$ less for degree-1 tensors, and
 	///   * $n (n - 2) = 8$ less for one index of degree-2 tensors, but
 	///   * $0$ less for two indices of degree-2 tensors.
 	///
-	/// Choosing the component order of $\R^{-,+} = \R^{1,n-1}$ over
-	/// $\R^{+,-} = \R^{n-1,1}$ identifies the time component of $x^\mu$ as
-	/// $x^0$ in compliance with the convention of identifying spatial
-	/// components $x^i$ with Latin alphabet indices starting from $i=1$.
+	/// Choosing the component order of $\R^{-,+} = \R^{1,n-1}$ over $\R^{+,-} = \R^{n-1,1}$
+	/// identifies the time component of $x^\mu$ as $x^0$ in compliance with the convention of
+	/// identifying spatial components $x^i$ with Latin alphabet indices starting from $i=1$.
 	/// ```
-	/// use nalgebra::{Vector4, Matrix4};
-	/// use nalgebra_spacetime::LorentzianN;
 	/// use approx::assert_ulps_eq;
+	/// use nalgebra::{Matrix4, Vector4};
+	/// use nalgebra_spacetime::LorentzianN;
 	///
 	/// let eta = Matrix4::<f64>::metric();
 	/// let sc = Vector4::new(-1.0, 1.0, 1.0, 1.0);
@@ -110,6 +100,7 @@ where
 	/// assert_ulps_eq!(f.r_dual(), eta * f);
 	/// assert_ulps_eq!(f.c_dual(), f * eta);
 	/// ```
+	#[must_use]
 	fn metric() -> Self
 	where
 		ShapeConstraint: SameDimension<R, C>;
@@ -117,16 +108,19 @@ where
 	/// Raises/Lowers *all* of its degree-1/degree-2 tensor indices.
 	///
 	/// Negates the appropriate components avoiding matrix multiplication.
+	#[must_use]
 	fn dual(&self) -> Self;
 
 	/// Raises/Lowers its degree-1/degree-2 *row* tensor index.
 	///
 	/// Prefer [`Self::dual`] over `self.r_dual().c_dual()` to half negations.
+	#[must_use]
 	fn r_dual(&self) -> Self;
 
 	/// Raises/Lowers its degree-1/degree-2 *column* tensor index.
 	///
 	/// Prefer [`Self::dual`] over `self.r_dual().c_dual()` to half negations.
+	#[must_use]
 	fn c_dual(&self) -> Self;
 
 	/// Raises/Lowers *all* of its degree-1/degree-2 tensor indices *in-place*.
@@ -142,16 +136,15 @@ where
 
 	/// Raises/Lowers its degree-1/degree-2 *column* tensor index *in-place*.
 	///
-	/// Prefer [`Self::dual`] over `self.r_dual_mut().c_dual_mut()` to half
-	/// negations.
+	/// Prefer [`Self::dual`] over `self.r_dual_mut().c_dual_mut()` to half negations.
 	fn c_dual_mut(&mut self);
 
 	/// Lorentzian matrix multiplication of degree-1/degree-2 tensors.
 	///
-	/// Equals `self.c_dual() * rhs`, the metric contraction of its *column*
-	/// index with `rhs`'s *row* index.
-	fn contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>)
-	-> MatrixMN<N, R, C2>
+	/// Equals `self.c_dual() * rhs`, the metric contraction of its *column* index with `rhs`'s
+	/// *row* index.
+	#[must_use]
+	fn contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> OMatrix<N, R, C2>
 	where
 		R2: Dim,
 		C2: Dim,
@@ -161,10 +154,10 @@ where
 
 	/// Same as [`Self::contr`] but with transposed tensor indices.
 	///
-	/// Equals `self.r_dual().tr_mul(rhs)`, the metric contraction of its
-	/// *transposed row* index with `rhs`'s *row* index.
-	fn tr_contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>)
-	-> MatrixMN<N, C, C2>
+	/// Equals `self.r_dual().tr_mul(rhs)`, the metric contraction of its *transposed row* index
+	/// with `rhs`'s *row* index.
+	#[must_use]
+	fn tr_contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> OMatrix<N, C, C2>
 	where
 		R2: Dim,
 		C2: Dim,
@@ -185,6 +178,7 @@ where
 	///   * relativistic dot product,
 	///   * Lorentz scalar, invariant under Lorentz transformations, or
 	///   * spacetime interval between two events, see [`Self::interval`].
+	#[must_use]
 	fn scalar<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
 	where
 		R2: Dim,
@@ -195,6 +189,7 @@ where
 	/// Same as [`Self::scalar`] but with transposed tensor indices.
 	///
 	/// Equals `self.dual().tr_dot(rhs)`.
+	#[must_use]
 	fn tr_scalar<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> N
 	where
 		R2: Dim,
@@ -207,6 +202,7 @@ where
 	/// Equals `self.scalar(self).neg().sqrt()`.
 	///
 	/// If spacelike, returns *NaN* or panics if `N` doesn't support it.
+	#[must_use]
 	fn timelike_norm(&self) -> N;
 
 	/// Lorentzian norm of spacelike degree-1/degree-2 tensors.
@@ -214,15 +210,16 @@ where
 	/// Equals `self.scalar(self).sqrt()`.
 	///
 	/// If timelike, returns *NaN* or panics if `N` doesn't support it.
+	#[must_use]
 	fn spacelike_norm(&self) -> N;
 
 	/// Spacetime interval between two events and region of `self`'s light cone.
 	///
-	/// Same as [`Self::interval_fn`] but with [`AbsDiffEq::default_epsilon`] as
-	/// in:
+	/// Same as [`Self::interval_fn`] but with [`AbsDiffEq::default_epsilon`] as in:
 	///
 	///   * `is_present = |time| abs_diff_eq!(time, N::zero())`, and
 	///   * `is_lightlike = |interval| abs_diff_eq!(interval, N::zero())`.
+	#[must_use]
 	fn interval(&self, rhs: &Self) -> (N, LightCone)
 	where
 		N: AbsDiffEq,
@@ -230,22 +227,19 @@ where
 
 	/// Spacetime interval between two events and region of `self`'s light cone.
 	///
-	/// Equals `(rhs - self).scalar(&(rhs - self))` where `self` is subtracted
-	/// from `rhs` to depict `rhs` in `self`'s light cone.
+	/// Equals `(rhs - self).scalar(&(rhs - self))` where `self` is subtracted from `rhs` to depict
+	/// `rhs` in `self`'s light cone.
 	///
 	/// Requires you to approximate when `N` equals `N::zero()` via:
 	///
 	///   * `is_present` for the time component of `rhs - self`, and
 	///   * `is_lightlike` for the interval.
 	///
-	/// Their signs are only evaluated in the `false` branches of `is_present`
-	/// and `is_lightlike`.
+	/// Their signs are only evaluated in the `false` branches of `is_present` and `is_lightlike`.
 	///
-	/// See [`Self::interval`] for using defaults and [`approx`] for further
-	/// details.
-	fn interval_fn<P, L>(&self, rhs: &Self,
-		is_present: P, is_lightlike: L)
-	-> (N, LightCone)
+	/// See [`Self::interval`] for using defaults and [`approx`] for further details.
+	#[must_use]
+	fn interval_fn<P, L>(&self, rhs: &Self, is_present: P, is_lightlike: L) -> (N, LightCone)
 	where
 		ShapeConstraint: DimEq<U1, C>,
 		P: Fn(N) -> bool,
@@ -256,15 +250,15 @@ where
 	/// \gdef \Lmu {\Lambda^{\mu'}\_{\phantom {\mu'} \mu}}
 	/// \gdef \Lnu {(\Lambda^T)\_\nu^{\phantom \nu \nu'}}
 	/// $
-	/// Lorentz transformation $\Lmu(\hat u, \zeta)$ boosting degree-1/degree-2
-	/// tensors to inertial `frame` of reference.
+	/// Lorentz transformation $\Lmu(\hat u, \zeta)$ boosting degree-1/degree-2 tensors to inertial
+	/// `frame` of reference.
 	///
 	/// $$
 	/// \Lmu(\hat u, \zeta) = I - \sinh \zeta (\uk) + (\cosh \zeta - 1) (\uk)^2
 	/// $$
 	///
-	/// Where $\uk$ is the generator of the boost along $\hat{u}$ with its
-	/// spatial components $(u^1, \dots, u^{n-1})$:
+	/// Where $\uk$ is the generator of the boost along $\hat{u}$ with its spatial componentsi
+	/// $(u^1, \dots, u^{n-1})$:
 	///
 	/// $$
 	/// \uk = \begin{pmatrix}
@@ -280,36 +274,37 @@ where
 	/// x^{\mu'} = \Lmu x^\mu
 	/// $$
 	///
-	/// Boosts degree-2 tensors by multiplying it from the left and its
-	/// transpose (symmetric for pure boosts) from the right:
+	/// Boosts degree-2 tensors by multiplying it from the left and its transpose (symmetric for
+	/// pure boosts) from the right:
 	///
 	/// $$
 	/// F^{\mu' \nu'} = \Lmu F^{\mu \nu} \Lnu
 	/// $$
 	///
 	/// ```
-	/// use nalgebra::{Vector3, Vector4, Matrix4};
-	/// use nalgebra_spacetime::{LorentzianN, Frame4};
 	/// use approx::assert_ulps_eq;
+	/// use nalgebra::{Matrix4, Vector3, Vector4};
+	/// use nalgebra_spacetime::{Frame4, LorentzianN};
 	///
 	/// let event = Vector4::new_random();
 	/// let frame = Frame4::from_beta(Vector3::new(0.3, -0.4, 0.6));
 	/// let boost = Matrix4::new_boost(&frame);
 	/// assert_ulps_eq!(boost * event, event.boost(&frame), epsilon = 1e-14);
 	/// ```
+	#[must_use]
 	fn new_boost<D>(frame: &FrameN<N, D>) -> Self
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: AreMultipliable<R, C, R, C> + DimEq<R, D>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
 
-	/// Boosts this degree-1 tensor $x^\mu$ to inertial `frame` of reference
-	/// along $\hat u$ with $\zeta$.
+	/// Boosts this degree-1 tensor $x^\mu$ to inertial `frame` of reference along $\hat u$ with
+	/// $\zeta$.
 	///
 	/// ```
-	/// use nalgebra::{Vector3, Vector4};
-	/// use nalgebra_spacetime::{LorentzianN, Frame4};
 	/// use approx::assert_ulps_eq;
+	/// use nalgebra::{Vector3, Vector4};
+	/// use nalgebra_spacetime::{Frame4, LorentzianN};
 	///
 	/// let muon_lifetime_at_rest = Vector4::new(2.2e-6, 0.0, 0.0, 0.0);
 	/// let muon_frame = Frame4::from_axis_beta(Vector3::z_axis(), 0.9952);
@@ -319,17 +314,22 @@ where
 	/// ```
 	///
 	/// See `boost_mut()` for further details.
+	#[must_use]
 	fn boost<D>(&self, frame: &FrameN<N, D>) -> Self
 	where
+		R: DimNameSub<U1>,
 		D: DimNameSub<U1>,
-		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
+		ShapeConstraint: SameNumberOfRows<R, D>
+			+ SameNumberOfColumns<C, U1>
+			+ DimEq<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>
+			+ SameNumberOfRows<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
 
 	/// $
 	/// \gdef \xu {(\vec x \cdot \hat u)}
 	/// $
-	/// Boosts this degree-1 tensor $x^\mu$ to inertial `frame` of reference
-	/// along $\hat u$ with $\zeta$ *in-place*.
+	/// Boosts this degree-1 tensor $x^\mu$ to inertial `frame` of reference along $\hat u$ with
+	/// $\zeta$ *in-place*.
 	///
 	/// $$
 	/// \begin{pmatrix}
@@ -342,9 +342,9 @@ where
 	/// $$
 	///
 	/// ```
+	/// use approx::assert_ulps_eq;
 	/// use nalgebra::Vector4;
 	/// use nalgebra_spacetime::LorentzianN;
-	/// use approx::assert_ulps_eq;
 	///
 	/// // Arbitrary timelike four-momentum.
 	/// let mut momentum = Vector4::new(24.3, 5.22, 16.8, 9.35);
@@ -364,18 +364,24 @@ where
 	/// ```
 	fn boost_mut<D>(&mut self, frame: &FrameN<N, D>)
 	where
+		R: DimNameSub<U1>,
 		D: DimNameSub<U1>,
-		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
+		ShapeConstraint: SameNumberOfRows<R, D>
+			+ SameNumberOfColumns<C, U1>
+			+ DimEq<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>
+			+ SameNumberOfRows<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>;
 
 	/// Velocity $u^\mu$ of inertial `frame` of reference.
-	fn new_velocity<D>(frame: &FrameN<N, D>) -> VectorN<N, D>
+	#[must_use]
+	fn new_velocity<D>(frame: &FrameN<N, D>) -> OVector<N, D>
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>;
 
 	/// Inertial frame of reference of this velocity $u^\mu$.
+	#[must_use]
 	fn frame(&self) -> FrameN<N, R>
 	where
 		R: DimNameSub<U1>,
@@ -383,8 +389,8 @@ where
 		DefaultAllocator: Allocator<N, DimNameDiff<R, U1>>;
 
 	/// From `temporal` and `spatial` spacetime split.
-	fn from_split<D>(temporal: &N, spatial: &VectorN<N, DimNameDiff<D, U1>>)
-	-> VectorN<N, D>
+	#[must_use]
+	fn from_split<D>(temporal: &N, spatial: &OVector<N, DimNameDiff<D, U1>>) -> OVector<N, D>
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
@@ -393,7 +399,8 @@ where
 			StorageMut<N, D, U1, RStride = U1, CStride = D>;
 
 	/// Spacetime split into [`Self::temporal`] and [`Self::spatial`].
-	fn split(&self) -> (&N, MatrixSliceMN<N, DimNameDiff<R, U1>, C, U1, R>)
+	#[must_use]
+	fn split(&self) -> (&N, MatrixView<N, DimNameDiff<R, U1>, C, U1, R>)
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
@@ -405,9 +412,9 @@ where
 	/// [`Self::spatial_mut`].
 	///
 	/// ```
+	/// use approx::assert_ulps_eq;
 	/// use nalgebra::Vector4;
 	/// use nalgebra_spacetime::LorentzianN;
-	/// use approx::assert_ulps_eq;
 	///
 	/// let mut spacetime = Vector4::new(1.0, 2.0, 3.0, 4.0);
 	/// let (temporal, mut spatial) = spacetime.split_mut();
@@ -417,8 +424,7 @@ where
 	/// spatial[2] += 4.0;
 	/// assert_ulps_eq!(spacetime, Vector4::new(2.0, 4.0, 6.0, 8.0));
 	/// ```
-	fn split_mut(&mut self)
-	-> (&mut N, MatrixSliceMutMN<N, DimNameDiff<R, U1>, C>)
+	fn split_mut(&mut self) -> (&mut N, MatrixViewMut<N, DimNameDiff<R, U1>, C>)
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
@@ -427,6 +433,7 @@ where
 			Storage<N, R, C, RStride = U1, CStride = R>;
 
 	/// Temporal component.
+	#[must_use]
 	fn temporal(&self) -> &N
 	where
 		R: DimNameSub<U1>,
@@ -439,8 +446,8 @@ where
 		ShapeConstraint: DimEq<U1, C>;
 
 	/// Spatial components.
-	fn spatial(&self)
-	-> MatrixSliceMN<N, DimNameDiff<R, U1>, C, U1, R>
+	#[must_use]
+	fn spatial(&self) -> MatrixView<N, DimNameDiff<R, U1>, C, U1, R>
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
@@ -449,8 +456,7 @@ where
 			Storage<N, R, C, RStride = U1, CStride = R>;
 
 	/// Mutable spatial components.
-	fn spatial_mut(&mut self)
-	-> MatrixSliceMutMN<N, DimNameDiff<R, U1>, C, U1, R>
+	fn spatial_mut(&mut self) -> MatrixViewMut<N, DimNameDiff<R, U1>, C, U1, R>
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
@@ -459,10 +465,10 @@ where
 			StorageMut<N, R, C, RStride = U1, CStride = R>;
 }
 
-impl<N, R, C> LorentzianN<N, R, C> for MatrixMN<N, R, C>
+impl<N, R, C> LorentzianN<N, R, C> for OMatrix<N, R, C>
 where
 	N: SimdRealField + Signed + Real,
-	R: DimName,
+	R: DimName + DimNameSub<U1>,
 	C: DimName,
 	DefaultAllocator: Allocator<N, R, C>,
 {
@@ -531,8 +537,7 @@ where
 	}
 
 	#[inline]
-	fn contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>)
-	-> MatrixMN<N, R, C2>
+	fn contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> OMatrix<N, R, C2>
 	where
 		R2: Dim,
 		C2: Dim,
@@ -544,8 +549,7 @@ where
 	}
 
 	#[inline]
-	fn tr_contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>)
-	-> MatrixMN<N, C, C2>
+	fn tr_contr<R2, C2, SB>(&self, rhs: &Matrix<N, R2, C2, SB>) -> OMatrix<N, C, C2>
 	where
 		R2: Dim,
 		C2: Dim,
@@ -594,15 +598,14 @@ where
 		N: AbsDiffEq,
 		ShapeConstraint: DimEq<U1, C>,
 	{
-		self.interval_fn(rhs,
+		self.interval_fn(
+			rhs,
 			|time| abs_diff_eq!(time, N::zero()),
 			|interval| abs_diff_eq!(interval, N::zero()),
 		)
 	}
 
-	fn interval_fn<P, L>(&self, rhs: &Self,
-		is_present: P, is_lightlike: L)
-	-> (N, LightCone)
+	fn interval_fn<P, L>(&self, rhs: &Self, is_present: P, is_lightlike: L) -> (N, LightCone)
 	where
 		ShapeConstraint: DimEq<U1, C>,
 		P: Fn(N) -> bool,
@@ -613,18 +616,18 @@ where
 		let interval = difference.scalar(&difference);
 		let light_cone = if is_lightlike(interval) {
 			if is_present(time) {
-				Origin
+				LightCone::Origin
+			} else if time.is_sign_positive() {
+				LightCone::LightlikeFuture
 			} else {
-				if time.is_sign_positive()
-					{ LightlikeFuture } else { LightlikePast }
+				LightCone::LightlikePast
 			}
+		} else if interval.is_sign_positive() || is_present(time) {
+			LightCone::Spacelike
+		} else if time.is_sign_positive() {
+			LightCone::TimelikeFuture
 		} else {
-			if interval.is_sign_positive() || is_present(time) {
-				Spacelike
-			} else {
-				if time.is_sign_positive()
-					{ TimelikeFuture } else { TimelikePast }
-			}
+			LightCone::TimelikePast
 		};
 		(interval, light_cone)
 	}
@@ -635,11 +638,15 @@ where
 		ShapeConstraint: AreMultipliable<R, C, R, C> + DimEq<R, D>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 	{
-		let &FrameN { zeta_cosh, zeta_sinh, ref axis } = frame;
+		let &FrameN {
+			zeta_cosh,
+			zeta_sinh,
+			ref axis,
+		} = frame;
 		let mut b = Self::zeros();
 		for (i, u) in axis.iter().enumerate() {
-			b[(i + 1, 0)] = u.inlined_clone();
-			b[(0, i + 1)] = u.inlined_clone();
+			b[(i + 1, 0)] = *u;
+			b[(0, i + 1)] = *u;
 		}
 		let uk = b.clone_owned();
 		b.gemm(zeta_cosh - N::one(), &uk, &uk, -zeta_sinh);
@@ -652,8 +659,12 @@ where
 	#[inline]
 	fn boost<D>(&self, frame: &FrameN<N, D>) -> Self
 	where
+		R: DimNameSub<U1>,
 		D: DimNameSub<U1>,
-		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
+		ShapeConstraint: SameNumberOfRows<R, D>
+			+ SameNumberOfColumns<C, U1>
+			+ DimEq<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>
+			+ SameNumberOfRows<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 	{
 		let mut v = self.clone_owned();
@@ -663,21 +674,30 @@ where
 
 	fn boost_mut<D>(&mut self, frame: &FrameN<N, D>)
 	where
+		R: DimNameSub<U1>,
 		D: DimNameSub<U1>,
-		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
+		ShapeConstraint: SameNumberOfRows<R, D>
+			+ SameNumberOfColumns<C, U1>
+			+ DimEq<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>
+			+ SameNumberOfRows<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>,
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 	{
-		let &FrameN { zeta_cosh, zeta_sinh, ref axis } = frame;
+		let &FrameN {
+			zeta_cosh,
+			zeta_sinh,
+			ref axis,
+		} = frame;
 		let u = axis.as_ref();
 		let a = self[0];
-		let zu = self.fixed_rows::<DimNameDiff<D, U1>>(1).dot(u);
+		let (rows, _cols) = self.shape_generic();
+		let zu = self.rows_generic(1, rows.sub(U1)).dot(u);
 		self[0] = zeta_cosh * a - zeta_sinh * zu;
-		let mut z = self.fixed_rows_mut::<DimNameDiff<D, U1>>(1);
+		let mut z = self.rows_generic_mut(1, rows.sub(U1));
 		z += u * ((zeta_cosh - N::one()) * zu - zeta_sinh * a);
 	}
 
 	#[inline]
-	fn new_velocity<D>(frame: &FrameN<N, D>) -> VectorN<N, D>
+	fn new_velocity<D>(frame: &FrameN<N, D>) -> OVector<N, D>
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
@@ -697,8 +717,7 @@ where
 	}
 
 	#[inline]
-	fn from_split<D>(temporal: &N, spatial: &VectorN<N, DimNameDiff<D, U1>>)
-	-> VectorN<N, D>
+	fn from_split<D>(temporal: &N, spatial: &OVector<N, DimNameDiff<D, U1>>) -> OVector<N, D>
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
@@ -706,14 +725,14 @@ where
 		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
 			StorageMut<N, D, U1, RStride = U1, CStride = D>,
 	{
-		let mut v = VectorN::<N, D>::zeros();
+		let mut v = OVector::<N, D>::zeros();
 		*v.temporal_mut() = *temporal;
 		v.spatial_mut().copy_from(spatial);
 		v
 	}
 
 	#[inline]
-	fn split(&self) -> (&N, MatrixSliceMN<N, DimNameDiff<R, U1>, C, U1, R>)
+	fn split(&self) -> (&N, MatrixView<N, DimNameDiff<R, U1>, C, U1, R>)
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
@@ -725,8 +744,7 @@ where
 	}
 
 	#[inline]
-	fn split_mut(&mut self)
-	-> (&mut N, MatrixSliceMutMN<N, DimNameDiff<R, U1>, C>)
+	fn split_mut(&mut self) -> (&mut N, MatrixViewMut<N, DimNameDiff<R, U1>, C>)
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
@@ -737,7 +755,7 @@ where
 		let (temporal, spatial) = self.as_mut_slice().split_at_mut(1);
 		(
 			temporal.get_mut(0).unwrap(),
-			MatrixSliceMutMN::<N, DimNameDiff<R, U1>, C>::from_slice(spatial),
+			MatrixViewMut::<N, DimNameDiff<R, U1>, C>::from_slice(spatial),
 		)
 	}
 
@@ -760,33 +778,33 @@ where
 	}
 
 	#[inline]
-	fn spatial(&self)
-	-> MatrixSliceMN<N, DimNameDiff<R, U1>, C, U1, R>
+	fn spatial(&self) -> MatrixView<N, DimNameDiff<R, U1>, C, U1, R>
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
 		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
-			Storage<N, R, C, RStride = U1, CStride = R>,
+			RawStorage<N, R, C, RStride = U1, CStride = R>,
 	{
-		self.fixed_slice::<DimNameDiff<R, U1>, C>(1, 0)
+		let (rows, _cols) = self.shape_generic();
+		self.rows_generic(1, rows.sub(U1))
 	}
 
 	#[inline]
-	fn spatial_mut(&mut self)
-	-> MatrixSliceMutMN<N, DimNameDiff<R, U1>, C, U1, R>
+	fn spatial_mut(&mut self) -> MatrixViewMut<N, DimNameDiff<R, U1>, C, U1, R>
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
 		<DefaultAllocator as Allocator<N, R, C>>::Buffer:
-			StorageMut<N, R, C, RStride = U1, CStride = R>,
+			RawStorageMut<N, R, C, RStride = U1, CStride = R>,
 	{
-		self.fixed_slice_mut::<DimNameDiff<R, U1>, C>(1, 0)
+		let (rows, _cols) = self.shape_generic();
+		self.rows_generic_mut(1, rows.sub(U1))
 	}
 }
 
 #[inline]
 fn neg<N: Scalar + Signed>(n: &mut N) {
-	*n = -n.inlined_clone();
+	*n = -n.clone();
 }
 
 /// Spacetime regions regarding an event's light cone.
@@ -816,13 +834,11 @@ pub type Frame3<N> = FrameN<N, U3>;
 /// $\R^{-,+} = \R^{1,3}$.
 pub type Frame4<N> = FrameN<N, U4>;
 
-/// Inertial frame of reference in $n$-dimensional Lorentzian space
-/// $\R^{-,+} = \R^{1,n-1}$.
+/// Inertial frame of reference in $n$-dimensional Lorentzian space $\R^{-,+} = \R^{1,n-1}$.
 ///
-/// Holds a statically sized direction axis $\hat u \in \R^{n-1}$ and two boost
-/// parameters precomputed from either velocity $u^\mu$, rapidity $\vec \zeta$,
-/// or velocity ratio $\vec \beta$ whether using [`Self::from_velocity`],
-/// [`Self::from_zeta`], or [`Self::from_beta`]:
+/// Holds a statically sized direction axis $\hat u \in \R^{n-1}$ and two boost parameters
+/// precomputed from either velocity $u^\mu$, rapidity $\vec \zeta$, or velocity ratio $\vec \beta$
+/// whether using [`Self::from_velocity`], [`Self::from_zeta`], or [`Self::from_beta`]:
 ///
 /// $$
 /// \cosh \zeta = \gamma
@@ -842,7 +858,7 @@ where
 {
 	zeta_cosh: N,
 	zeta_sinh: N,
-	axis: Unit<VectorN<N, DimNameDiff<D, U1>>>,
+	axis: Unit<OVector<N, DimNameDiff<D, U1>>>,
 }
 
 impl<N, D> FrameN<N, D>
@@ -852,99 +868,127 @@ where
 	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 {
 	/// Inertial frame of reference with velocity $u^\mu$.
-	pub fn from_velocity<R, C>(u: &MatrixMN<N, R, C>) -> Self
+	#[must_use]
+	pub fn from_velocity<R, C>(u: &OMatrix<N, R, C>) -> Self
 	where
-		R: Dim,
+		R: DimNameSub<U1>,
 		C: Dim,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<N, R, C>
+		DefaultAllocator: Allocator<N, R, C>,
 	{
-		let mut scaled_axis = VectorN::zeros();
+		let mut scaled_axis = OVector::zeros();
 		let zeta_cosh = u[0];
-		scaled_axis.iter_mut()
-			.zip(u.fixed_rows::<DimNameDiff<D, U1>>(1).iter())
+		let (rows, _cols) = u.shape_generic();
+		scaled_axis
+			.iter_mut()
+			.zip(u.rows_generic(1, rows.sub(U1)).iter())
 			.for_each(|(scaled_axis, &u)| *scaled_axis = u);
 		let (axis, zeta_sinh) = Unit::new_and_get(scaled_axis);
-		Self { zeta_cosh, zeta_sinh, axis }
+		Self {
+			zeta_cosh,
+			zeta_sinh,
+			axis,
+		}
 	}
 
 	/// Inertial frame of reference with rapidity $\vec \zeta$.
+	#[must_use]
 	#[inline]
-	pub fn from_zeta(scaled_axis: VectorN<N, DimNameDiff<D, U1>>) -> Self {
+	pub fn from_zeta(scaled_axis: OVector<N, DimNameDiff<D, U1>>) -> Self {
 		let (axis, zeta) = Unit::new_and_get(scaled_axis);
 		Self::from_axis_zeta(axis, zeta)
 	}
 
 	/// Inertial frame of reference along $\hat u$ with rapidity $\zeta$.
+	#[must_use]
 	#[inline]
-	pub fn from_axis_zeta(axis: Unit<VectorN<N, DimNameDiff<D, U1>>>, zeta: N)
-	-> Self {
-		Self { zeta_cosh: zeta.cosh(), zeta_sinh: zeta.sinh(), axis }
+	pub fn from_axis_zeta(axis: Unit<OVector<N, DimNameDiff<D, U1>>>, zeta: N) -> Self {
+		Self {
+			zeta_cosh: zeta.cosh(),
+			zeta_sinh: zeta.sinh(),
+			axis,
+		}
 	}
 
 	/// Inertial frame of reference with velocity ratio $\vec \beta$.
+	#[must_use]
 	#[inline]
-	pub fn from_beta(scaled_axis: VectorN<N, DimNameDiff<D, U1>>) -> Self {
+	pub fn from_beta(scaled_axis: OVector<N, DimNameDiff<D, U1>>) -> Self {
 		let (axis, beta) = Unit::new_and_get(scaled_axis);
 		Self::from_axis_beta(axis, beta)
 	}
 
 	/// Inertial frame of reference along $\hat u$ with velocity ratio $\beta$.
+	#[must_use]
 	#[inline]
-	pub fn from_axis_beta(axis: Unit<VectorN<N, DimNameDiff<D, U1>>>, beta: N)
-	-> Self {
-		debug_assert!(-N::one() < beta && beta < N::one(),
-			"Velocity ratio `beta` is out of range (-1, +1)");
+	pub fn from_axis_beta(axis: Unit<OVector<N, DimNameDiff<D, U1>>>, beta: N) -> Self {
+		debug_assert!(
+			-N::one() < beta && beta < N::one(),
+			"Velocity ratio `beta` is out of range (-1, +1)"
+		);
 		let gamma = N::one() / (N::one() - beta * beta).sqrt();
-		Self { zeta_cosh: gamma, zeta_sinh: beta * gamma, axis }
+		Self {
+			zeta_cosh: gamma,
+			zeta_sinh: beta * gamma,
+			axis,
+		}
 	}
 
 	/// Velocity $u^\mu$.
-	pub fn velocity(&self) -> VectorN<N, D>
+	#[must_use]
+	pub fn velocity(&self) -> OVector<N, D>
 	where
-		DefaultAllocator: Allocator<N, D>
+		DefaultAllocator: Allocator<N, D>,
 	{
-		let mut u = VectorN::<N, D>::zeros();
+		let mut u = OVector::<N, D>::zeros();
 		u[0] = self.gamma();
-		u.fixed_rows_mut::<DimNameDiff<D, U1>>(1).iter_mut()
+		let (rows, _cols) = u.shape_generic();
+		u.rows_generic_mut(1, rows.sub(U1))
+			.iter_mut()
 			.zip(self.axis.iter())
 			.for_each(|(u, &axis)| *u = self.beta_gamma() * axis);
 		u
 	}
 
 	/// Direction $\hat u$.
+	#[must_use]
 	#[inline]
-	pub fn axis(&self) -> Unit<VectorN<N, DimNameDiff<D, U1>>> {
+	pub fn axis(&self) -> Unit<OVector<N, DimNameDiff<D, U1>>> {
 		self.axis.clone()
 	}
 
 	/// Rapidity $\zeta$.
+	#[must_use]
 	#[inline]
 	pub fn zeta(&self) -> N {
 		self.beta().atanh()
 	}
 
 	/// Velocity ratio $\beta$.
+	#[must_use]
 	#[inline]
 	pub fn beta(&self) -> N {
 		self.beta_gamma() / self.gamma()
 	}
 
 	/// Lorentz factor $\gamma$.
+	#[must_use]
 	#[inline]
-	pub fn gamma(&self) -> N {
+	pub const fn gamma(&self) -> N {
 		self.zeta_cosh
 	}
 
 	/// Product of velocity ratio $\beta$ and Lorentz factor $\gamma$.
+	#[must_use]
 	#[inline]
-	pub fn beta_gamma(&self) -> N {
+	pub const fn beta_gamma(&self) -> N {
 		self.zeta_sinh
 	}
 
 	/// Relativistic velocity addition `self`$\oplus$`frame`.
 	///
 	/// Equals `frame.velocity().boost(&-self.clone()).frame()`.
+	#[must_use]
 	#[inline]
 	pub fn compose(&self, frame: &Self) -> Self
 	where
@@ -954,10 +998,12 @@ where
 	}
 }
 
-impl<N> FrameN<N, U4>
+impl<N, D> FrameN<N, D>
 where
+	ShapeConstraint: DimEq<D, U4>,
 	N: SimdRealField + Signed + Real,
-	DefaultAllocator: Allocator<N, U3>,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 {
 	/// $
 	/// \gdef \Bu {B^{\mu'}\_{\phantom {\mu'} \mu} (\vec \beta_u)}
@@ -967,12 +1013,12 @@ where
 	/// \gdef \Ruv {R^{\mu''}\_{\phantom {\mu''} \mu'} (\epsilon)}
 	/// \gdef \Luv {\Lambda^{\mu''}\_{\phantom {\mu''} \mu} (\vec \beta_{\Puv})}
 	/// $
-	/// Wigner rotation axis $\widehat {\vec \beta_u \times \vec \beta_v}$ and
-	/// angle $\epsilon$ of the boost composition `self`$\oplus$`frame`.
+	/// Wigner rotation axis $\widehat {\vec \beta_u \times \vec \beta_v}$ and angle $\epsilon$ of
+	/// the boost composition `self`$\oplus$`frame`.
 	///
-	/// The composition of two pure boosts, $\Bu$ to `self` followed by $\Bv$
-	/// to `frame`, results in a composition of a pure boost $\Buv$ and a
-	/// *non-vanishing* spatial rotation $\Ruv$ for *non-collinear* boosts:
+	/// The composition of two pure boosts, $\Bu$ to `self` followed by $\Bv$ to `frame`, results in
+	/// a composition of a pure boost $\Buv$ and a *non-vanishing* spatial rotation $\Ruv$ for
+	/// *non-collinear* boosts:
 	///
 	/// $$
 	/// \Luv = \Ruv \Buv = \Bv \Bu
@@ -991,9 +1037,9 @@ where
 	/// $$
 	///
 	/// ```
-	/// use nalgebra::Vector3;
-	/// use nalgebra_spacetime::{LorentzianN, Frame4};
 	/// use approx::{assert_abs_diff_ne, assert_ulps_eq};
+	/// use nalgebra::Vector3;
+	/// use nalgebra_spacetime::{Frame4, LorentzianN};
 	///
 	/// let u = Frame4::from_beta(Vector3::new(0.18, 0.73, 0.07));
 	/// let v = Frame4::from_beta(Vector3::new(0.41, 0.14, 0.25));
@@ -1008,7 +1054,8 @@ where
 	/// assert_ulps_eq!(angle, ucv.angle(&vcu), epsilon = 1e-15);
 	/// assert_ulps_eq!(axis, ucv.cross(&vcu).normalize(), epsilon = 1e-15);
 	/// ```
-	pub fn axis_angle(&self, frame: &Self) -> (Unit<Vector3<N>>, N) {
+	#[must_use]
+	pub fn axis_angle(&self, frame: &Self) -> (Unit<OVector<N, DimNameDiff<D, U1>>>, N) {
 		let (u, v) = (self, frame);
 		let (axis, sin) = Unit::new_and_get(u.axis().cross(&v.axis()));
 		let uv = u.axis().dot(&v.axis());
@@ -1021,15 +1068,15 @@ where
 		(axis, (sum / prod * bg * sin).asin())
 	}
 
-	/// Wigner rotation matrix $R(\widehat {\vec \beta_u \times \vec \beta_v},
-	/// \epsilon)$ of the boost composition `self`$\oplus$`frame`.
+	/// Wigner rotation matrix $R(\widehat {\vec \beta_u \times \vec \beta_v}, \epsilon)$ of the
+	/// boost composition `self`$\oplus$`frame`.
 	///
 	/// See [`Self::axis_angle`] for further details.
 	///
 	/// ```
-	/// use nalgebra::{Vector3, Matrix4};
-	/// use nalgebra_spacetime::{LorentzianN, Frame4};
 	/// use approx::{assert_ulps_eq, assert_ulps_ne};
+	/// use nalgebra::{Matrix4, Vector3};
+	/// use nalgebra_spacetime::{Frame4, LorentzianN};
 	///
 	/// let u = Frame4::from_beta(Vector3::new(0.18, 0.73, 0.07));
 	/// let v = Frame4::from_beta(Vector3::new(0.41, 0.14, 0.25));
@@ -1048,20 +1095,25 @@ where
 	/// assert_ulps_eq!(rotation_ucv * boost_ucv, boost_v * boost_u);
 	/// assert_ulps_eq!(boost_vcu * rotation_ucv, boost_v * boost_u);
 	/// ```
+	#[must_use]
 	pub fn rotation(&self, frame: &Self) -> Matrix4<N>
 	where
 		N::Element: SimdRealField,
-		DefaultAllocator: Allocator<N, U4, U4>,
+		DefaultAllocator: Allocator<N, D, D>,
 	{
 		let mut m = Matrix4::<N>::identity();
 		let (axis, angle) = self.axis_angle(frame);
-		let r = Rotation3::<N>::from_axis_angle(&axis, angle);
-		m.fixed_slice_mut::<U3, U3>(1, 1).copy_from(r.matrix());
+		let axis = axis.into_inner();
+		let axis = Unit::new_unchecked(Vector3::new(axis[0], axis[1], axis[2]));
+		let r = Rotation3::from_axis_angle(&axis, angle);
+		let (rows, cols) = m.shape_generic();
+		m.generic_view_mut((1, 1), (rows.sub(U1), cols.sub(U1)))
+			.copy_from(r.matrix());
 		m
 	}
 }
 
-impl<N, R, C> From<MatrixMN<N, R, C>> for FrameN<N, R>
+impl<N, R, C> From<OMatrix<N, R, C>> for FrameN<N, R>
 where
 	N: SimdRealField + Signed + Real,
 	R: DimNameSub<U1>,
@@ -1070,12 +1122,12 @@ where
 	DefaultAllocator: Allocator<N, R, C> + Allocator<N, DimNameDiff<R, U1>>,
 {
 	#[inline]
-	fn from(u: MatrixMN<N, R, C>) -> Self {
+	fn from(u: OMatrix<N, R, C>) -> Self {
 		u.frame()
 	}
 }
 
-impl<N, D> From<FrameN<N, D>> for VectorN<N, D>
+impl<N, D> From<FrameN<N, D>> for OVector<N, D>
 where
 	N: SimdRealField + Signed + Real,
 	D: DimNameSub<U1>,
@@ -1127,15 +1179,15 @@ where
 
 /// Momentum in $n$-dimensional Lorentzian space $\R^{-,+} = \R^{1,n-1}$.
 ///
-/// Assuming unit system with speed of light $c=1$ and rest mass $m$ as
-/// timelike norm in spacelike sign convention as in:
+/// Assuming unit system with speed of light $c=1$ and rest mass $m$ as timelike norm in spacelike
+/// sign convention as in:
 ///
 /// $$
 /// m^2=E^2-\vec {p}^2=-p_\mu p^\mu
 /// $$
 ///
-/// Where $p^\mu$ is the $n$-momentum with energy $E$ as temporal $p^0$ and
-/// momentum $\vec p$ as spatial $p^i$ components:
+/// Where $p^\mu$ is the $n$-momentum with energy $E$ as temporal $p^0$ and momentum $\vec p$ as
+/// spatial $p^i$ components:
 ///
 /// $$
 /// p^\mu = m u^\mu = m \begin{pmatrix}
@@ -1145,8 +1197,7 @@ where
 /// \end{pmatrix}
 /// $$
 ///
-/// With $n$-velocity $u^\mu$, Lorentz factor $\gamma$, and velocity ratio
-/// $\vec \beta$.
+/// With $n$-velocity $u^\mu$, Lorentz factor $\gamma$, and velocity ratio $\vec \beta$.
 #[derive(Debug, PartialEq, Clone)]
 pub struct MomentumN<N, D>
 where
@@ -1154,7 +1205,7 @@ where
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, D>,
 {
-	momentum: VectorN<N, D>,
+	momentum: OVector<N, D>,
 }
 
 impl<N, D> MomentumN<N, D>
@@ -1165,31 +1216,37 @@ where
 {
 	/// Momentum with spacetime [`LorentzianN::split`], `energy` $E$ and
 	/// `momentum` $\vec p$.
+	#[must_use]
 	#[inline]
-	pub fn from_split(energy: &N, momentum: &VectorN<N, DimNameDiff<D, U1>>)
-	-> Self
+	pub fn from_split(energy: &N, momentum: &OVector<N, DimNameDiff<D, U1>>) -> Self
 	where
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
 			StorageMut<N, D, U1, RStride = U1, CStride = D>,
 	{
-		Self { momentum: VectorN::<N, D>::from_split(energy, momentum) }
+		Self {
+			momentum: OVector::<N, D>::from_split(energy, momentum),
+		}
 	}
 
 	/// Momentum $p^\mu=m u^\mu$ with rest `mass` $m$ at `velocity` $u^\mu$.
+	#[must_use]
 	#[inline]
-	pub fn from_mass_at_velocity(mass: N, velocity: VectorN<N, D>) -> Self
+	pub fn from_mass_at_velocity(mass: N, velocity: OVector<N, D>) -> Self
 	where
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 	{
-		Self { momentum: velocity * mass }
+		Self {
+			momentum: velocity * mass,
+		}
 	}
 
 	/// Momentum $p^\mu$ with rest `mass` $m$ in `frame`.
 	///
 	/// Equals `frame.velocity() * mass`.
+	#[must_use]
 	#[inline]
-	pub fn from_mass_in_frame(mass: N, frame: FrameN<N, D>) -> Self
+	pub fn from_mass_in_frame(mass: N, frame: &FrameN<N, D>) -> Self
 	where
 		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
 	{
@@ -1197,34 +1254,39 @@ where
 	}
 
 	/// Momentum $p^\mu$ with rest `mass` $m$ in center-of-momentum frame.
+	#[must_use]
 	#[inline]
 	pub fn from_mass_at_rest(mass: N) -> Self {
-		let mut momentum = VectorN::<N, D>::zeros();
+		let mut momentum = OVector::<N, D>::zeros();
 		*momentum.temporal_mut() = mass;
 		Self { momentum }
 	}
 
-	/// Rest mass $m$ as timelike norm $\sqrt{-p_\mu p^\mu}$ in spacelike sign
-	/// convention.
+	/// Rest mass $m$ as timelike norm $\sqrt{-p_\mu p^\mu}$ in spacelike sign convention.
+	#[must_use]
 	#[inline]
 	pub fn mass(&self) -> N {
 		self.momentum.timelike_norm()
 	}
 
 	/// Velocity $u^\mu$ as momentum $p^\mu$ divided by rest `mass()` $m$.
-	pub fn velocity(&self) -> VectorN<N, D> {
+	#[must_use]
+	#[inline]
+	pub fn velocity(&self) -> OVector<N, D> {
 		self.momentum.clone() / self.mass()
 	}
 
 	/// Energy $E$ as [`LorentzianN::temporal`] component.
+	#[must_use]
 	#[inline]
 	pub fn energy(&self) -> &N {
 		self.momentum.temporal()
 	}
 
 	/// Momentum $\vec p$ as [`LorentzianN::spatial`] components.
+	#[must_use]
 	#[inline]
-	pub fn momentum(&self) -> VectorSliceN<N, DimNameDiff<D, U1>, U1, D>
+	pub fn momentum(&self) -> VectorView<N, DimNameDiff<D, U1>, U1, D>
 	where
 		DefaultAllocator: Allocator<N, D, U1>,
 		<DefaultAllocator as Allocator<N, D, U1>>::Buffer:
@@ -1234,19 +1296,19 @@ where
 	}
 }
 
-impl<N, D> From<VectorN<N, D>> for MomentumN<N, D>
+impl<N, D> From<OVector<N, D>> for MomentumN<N, D>
 where
 	N: SimdRealField + Signed + Real,
 	D: DimNameSub<U1>,
 	DefaultAllocator: Allocator<N, D>,
 {
 	#[inline]
-	fn from(momentum: VectorN<N, D>) -> Self {
+	fn from(momentum: OVector<N, D>) -> Self {
 		Self { momentum }
 	}
 }
 
-impl<N, D> From<MomentumN<N, D>> for VectorN<N, D>
+impl<N, D> From<MomentumN<N, D>> for OVector<N, D>
 where
 	N: SimdRealField + Signed + Real,
 	D: DimNameSub<U1>,
@@ -1268,7 +1330,9 @@ where
 
 	#[inline]
 	fn add(self, rhs: Self) -> Self::Output {
-		Self { momentum: self.momentum + rhs.momentum }
+		Self {
+			momentum: self.momentum + rhs.momentum,
+		}
 	}
 }
 
@@ -1282,7 +1346,9 @@ where
 
 	#[inline]
 	fn sub(self, rhs: Self) -> Self::Output {
-		Self { momentum: self.momentum - rhs.momentum }
+		Self {
+			momentum: self.momentum - rhs.momentum,
+		}
 	}
 }
 

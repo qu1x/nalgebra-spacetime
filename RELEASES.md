@@ -1,3 +1,8 @@
+# Version 0.3.0 (2024-02-21)
+
+  * Update dependencies.
+  * Change license to `MIT OR Apache-2.0`.
+
 # Version 0.2.4 (2021-03-06)
 
   * Update `nalgebra`.

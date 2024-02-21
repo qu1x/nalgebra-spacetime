@@ -1,13 +1,13 @@
 [package]
 name = "nalgebra-spacetime"
-version = "0.2.4"
+version = "0.3.0"
 authors = ["Rouven Spreckels <rs@qu1x.dev>"]
-edition = "2018"
+edition = "2021"
 description = "Spacetime Extension for nalgebra"
-documentation = "https://doc.qu1x.dev/nalgebra-spacetime"
+documentation = "https://docs.rs/nalgebra-spacetime"
 repository = "https://github.com/qu1x/nalgebra-spacetime"
 readme = "README.md"
-license = "BSD-3-Clause"
+license = "MIT OR Apache-2.0"
 keywords = [
 	"lorentzian-space",
 	"minkowski-space",
@@ -25,16 +25,13 @@ include = [
 	"Cargo.toml",
 	"README.md",
 	"RELEASES.md",
-	"LICENSE.md",
+	"LICENSES/*.md",
 ]
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex.html" ]
 
-[badges]
-travis-ci = { repository = "qu1x/nalgebra-spacetime" }
-
 [dependencies]
-nalgebra = { version = "0.25", features = ["rand"] }
-num-traits = "0.2"
-approx = { version = "0.4", default-features = false }
+nalgebra = { version = "0.32.4", features = ["rand"] }
+num-traits = "0.2.18"
+approx = { version = "0.5.1", default-features = false }

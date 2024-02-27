@@ -27,10 +27,14 @@
 #![allow(clippy::doc_markdown)]
 #![allow(clippy::type_complexity)]
 
+pub use approx;
+pub use nalgebra;
+pub use num_traits;
+
 use approx::{abs_diff_eq, AbsDiffEq};
 use nalgebra::{
 	base::allocator::Allocator,
-	base::dimension::{U1, U2, U3, U4},
+	base::dimension::{U1, U2, U3, U4, U5, U6},
 	constraint::{
 		AreMultipliable, DimEq, SameDimension, SameNumberOfColumns, SameNumberOfRows,
 		ShapeConstraint,
@@ -833,6 +837,12 @@ pub type Frame3<N> = FrameN<N, U3>;
 /// Inertial frame of reference in $4$-dimensional Lorentzian space
 /// $\R^{-,+} = \R^{1,3}$.
 pub type Frame4<N> = FrameN<N, U4>;
+/// Inertial frame of reference in $5$-dimensional Lorentzian space
+/// $\R^{-,+} = \R^{1,4}$.
+pub type Frame5<N> = FrameN<N, U5>;
+/// Inertial frame of reference in $6$-dimensional Lorentzian space
+/// $\R^{-,+} = \R^{1,5}$.
+pub type Frame6<N> = FrameN<N, U6>;
 
 /// Inertial frame of reference in $n$-dimensional Lorentzian space $\R^{-,+} = \R^{1,n-1}$.
 ///
@@ -1445,3 +1455,7 @@ pub type Momentum2<N> = MomentumN<N, U2>;
 pub type Momentum3<N> = MomentumN<N, U3>;
 /// Momentum in $4$-dimensional Lorentzian space $\R^{-,+} = \R^{1,3}$.
 pub type Momentum4<N> = MomentumN<N, U4>;
+/// Momentum in $5$-dimensional Lorentzian space $\R^{-,+} = \R^{1,4}$.
+pub type Momentum5<N> = MomentumN<N, U5>;
+/// Momentum in $6$-dimensional Lorentzian space $\R^{-,+} = \R^{1,5}$.
+pub type Momentum6<N> = MomentumN<N, U6>;

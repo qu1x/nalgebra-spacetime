@@ -2,6 +2,9 @@
 
   * Make Wigner rotation n-dimensional.
   * Negate `FrameN` axis instead of beta.
+  * Escape prime symbol.
+  * Re-export dependencies.
+  * Add 5- and 6-dimensional aliases.
 
 # Version 0.3.0 (2024-02-21)
 

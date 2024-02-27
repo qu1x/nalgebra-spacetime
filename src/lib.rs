@@ -36,8 +36,8 @@ use nalgebra::{
 		ShapeConstraint,
 	},
 	storage::{Owned, RawStorage, RawStorageMut, Storage, StorageMut},
-	DefaultAllocator, Dim, DimName, DimNameDiff, DimNameSub, Matrix, Matrix4, MatrixView,
-	MatrixViewMut, OMatrix, OVector, Rotation3, Scalar, SimdRealField, Unit, Vector3, VectorView,
+	DefaultAllocator, Dim, DimName, DimNameDiff, DimNameSub, Matrix, MatrixView, MatrixViewMut,
+	OMatrix, OVector, Scalar, SimdRealField, Unit, VectorView,
 };
 use num_traits::{real::Real, sign::Signed};
 use std::ops::{Add, Neg, Sub};
@@ -996,25 +996,39 @@ where
 	{
 		frame.velocity().boost(&-self.clone()).frame()
 	}
-}
 
-impl<N, D> FrameN<N, D>
-where
-	ShapeConstraint: DimEq<D, U4>,
-	N: SimdRealField + Signed + Real,
-	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
-{
+	/// Wigner rotation angle $\epsilon$ of the boost composition `self`$\oplus$`frame`.
+	///
+	/// The angle between the forward and backward composition:
+	///
+	/// $$
+	/// \epsilon = \angle (\vec \beta_u \oplus \vec \beta_v, \vec \beta_v \oplus \vec \beta_u)
+	/// $$
+	///
+	/// See [`Self::rotation`] for further details.
+	#[must_use]
+	pub fn angle(&self, frame: &Self) -> N
+	where
+		DefaultAllocator: Allocator<N, D>,
+	{
+		let (u, v) = (self, frame);
+		let ucv = u.compose(v);
+		let vcu = v.compose(u);
+		ucv.axis().angle(&vcu.axis())
+	}
+
 	/// $
 	/// \gdef \Bu {B^{\mu'}\_{\phantom {\mu'} \mu} (\vec \beta_u)}
 	/// \gdef \Bv {B^{\mu''}\_{\phantom {\mu''} \mu'} (\vec \beta_v)}
 	/// \gdef \Puv {u \oplus v}
 	/// \gdef \Buv {B^{\mu'}\_{\phantom {\mu'} \mu} (\vec \beta_{\Puv})}
 	/// \gdef \Ruv {R^{\mu''}\_{\phantom {\mu''} \mu'} (\epsilon)}
+	/// \gdef \R {R (\epsilon)}
+	/// \gdef \Kuv {K(\epsilon)}
 	/// \gdef \Luv {\Lambda^{\mu''}\_{\phantom {\mu''} \mu} (\vec \beta_{\Puv})}
 	/// $
-	/// Wigner rotation axis $\widehat {\vec \beta_u \times \vec \beta_v}$ and angle $\epsilon$ of
-	/// the boost composition `self`$\oplus$`frame`.
+	/// Wigner rotation matrix $R(\widehat {\vec \beta_u \wedge \vec \beta_v}, \epsilon)$ of the
+	/// boost composition `self`$\oplus$`frame`.
 	///
 	/// The composition of two pure boosts, $\Bu$ to `self` followed by $\Bv$ to `frame`, results in
 	/// a composition of a pure boost $\Buv$ and a *non-vanishing* spatial rotation $\Ruv$ for
@@ -1023,6 +1037,77 @@ where
 	/// $$
 	/// \Luv = \Ruv \Buv = \Bv \Bu
 	/// $$
+	///
+	/// The returned homogeneous rotation matrix
+	///
+	/// $$
+	/// \R = \begin{pmatrix}
+	///      1      & \vec{0}^T \\\\
+	///   \vec{0}   &   \Kuv    \end{pmatrix}
+	/// $$
+	///
+	/// embeds the spatial rotation matrix
+	///
+	/// $$
+	/// \Kuv = I + \sin \epsilon (\hat v \hat u^T - \hat u \hat v^T)
+	///          + (\cos \epsilon - 1) (\hat u \hat u^T + \hat v \hat v^T)
+	/// $$
+	///
+	/// rotating in the plane spanned by the orthonormalized pair $\hat u = \hat \beta_u$ and
+	/// $\hat v = \widehat{\hat \beta_v - (\hat \beta_u \cdot \hat \beta_v) \hat \beta_u}$. The
+	/// rotation angle $\epsilon$ is found according to [`Self::angle`].
+	///
+	/// See [`Self::axis_angle`] for $4$-dimensional specialization.
+	///
+	/// ```
+	/// use approx::{assert_ulps_eq, assert_ulps_ne};
+	/// use nalgebra::{Matrix4, Vector3};
+	/// use nalgebra_spacetime::{Frame4, LorentzianN};
+	///
+	/// let u = Frame4::from_beta(Vector3::new(0.18, 0.73, 0.07));
+	/// let v = Frame4::from_beta(Vector3::new(0.41, 0.14, 0.25));
+	/// let ucv = u.compose(&v);
+	/// let vcu = v.compose(&u);
+	///
+	/// let boost_u = Matrix4::new_boost(&u);
+	/// let boost_v = Matrix4::new_boost(&v);
+	/// let boost_ucv = Matrix4::new_boost(&ucv);
+	/// let boost_vcu = Matrix4::new_boost(&vcu);
+	///
+	/// let (matrix_ucv, angle_ucv) = u.rotation(&v);
+	///
+	/// assert_ulps_eq!(angle_ucv, u.angle(&v));
+	/// assert_ulps_ne!(boost_ucv, boost_v * boost_u);
+	/// assert_ulps_ne!(boost_vcu, boost_u * boost_v);
+	/// assert_ulps_eq!(matrix_ucv * boost_ucv, boost_v * boost_u);
+	/// assert_ulps_eq!(boost_vcu * matrix_ucv, boost_v * boost_u);
+	/// ```
+	#[must_use]
+	pub fn rotation(&self, frame: &Self) -> (OMatrix<N, D, D>, N)
+	where
+		DefaultAllocator: Allocator<N, D>
+			+ Allocator<N, D, D>
+			+ Allocator<N, U1, DimNameDiff<D, U1>>
+			+ Allocator<N, DimNameDiff<D, U1>, DimNameDiff<D, U1>>,
+	{
+		let [u, v] = [self, frame];
+		let ang = u.angle(v);
+		let (sin, cos) = ang.sin_cos();
+		let u = u.axis().into_inner();
+		let v = v.axis().into_inner();
+		let v = (&v - &u * u.dot(&v)).normalize();
+		let ut = u.transpose();
+		let vt = v.transpose();
+		let rot = (&v * &ut - &u * &vt) * sin + (&u * &ut + &v * &vt) * (cos - N::one());
+		let mut mat = OMatrix::<N, D, D>::identity();
+		let (r, c) = mat.shape_generic();
+		let mut sub = mat.generic_view_mut((1, 1), (r.sub(U1), c.sub(U1)));
+		sub += rot;
+		(mat, ang)
+	}
+
+	/// Wigner rotation axis $\widehat {\vec \beta_u \times \vec \beta_v}$ and angle $\epsilon$ of
+	/// the boost composition `self`$\oplus$`frame`.
 	///
 	/// $$
 	/// \epsilon = \arcsin \Bigg({
@@ -1035,6 +1120,8 @@ where
 	/// $$
 	/// \gamma = \gamma_u \gamma_v (1 + \vec \beta_u \cdot \vec \beta_v)
 	/// $$
+	///
+	/// See [`Self::rotation`] for $n$-dimensional generalization.
 	///
 	/// ```
 	/// use approx::{assert_abs_diff_ne, assert_ulps_eq};
@@ -1055,7 +1142,13 @@ where
 	/// assert_ulps_eq!(axis, ucv.cross(&vcu).normalize(), epsilon = 1e-15);
 	/// ```
 	#[must_use]
-	pub fn axis_angle(&self, frame: &Self) -> (Unit<OVector<N, DimNameDiff<D, U1>>>, N) {
+	pub fn axis_angle(&self, frame: &Self) -> (Unit<OVector<N, DimNameDiff<D, U1>>>, N)
+	where
+		N: SimdRealField + Signed + Real,
+		D: DimNameSub<U1>,
+		ShapeConstraint: DimEq<D, U4>,
+		DefaultAllocator: Allocator<N, DimNameDiff<D, U1>>,
+	{
 		let (u, v) = (self, frame);
 		let (axis, sin) = Unit::new_and_get(u.axis().cross(&v.axis()));
 		let uv = u.axis().dot(&v.axis());
@@ -1066,50 +1159,6 @@ where
 		let sum = N::one() + cg + ug + vg;
 		let prod = (N::one() + cg) * (N::one() + ug) * (N::one() + vg);
 		(axis, (sum / prod * bg * sin).asin())
-	}
-
-	/// Wigner rotation matrix $R(\widehat {\vec \beta_u \times \vec \beta_v}, \epsilon)$ of the
-	/// boost composition `self`$\oplus$`frame`.
-	///
-	/// See [`Self::axis_angle`] for further details.
-	///
-	/// ```
-	/// use approx::{assert_ulps_eq, assert_ulps_ne};
-	/// use nalgebra::{Matrix4, Vector3};
-	/// use nalgebra_spacetime::{Frame4, LorentzianN};
-	///
-	/// let u = Frame4::from_beta(Vector3::new(0.18, 0.73, 0.07));
-	/// let v = Frame4::from_beta(Vector3::new(0.41, 0.14, 0.25));
-	/// let ucv = u.compose(&v);
-	/// let vcu = v.compose(&u);
-	///
-	/// let boost_u = Matrix4::new_boost(&u);
-	/// let boost_v = Matrix4::new_boost(&v);
-	/// let boost_ucv = Matrix4::new_boost(&ucv);
-	/// let boost_vcu = Matrix4::new_boost(&vcu);
-	///
-	/// let rotation_ucv = u.rotation(&v);
-	///
-	/// assert_ulps_ne!(boost_ucv, boost_v * boost_u);
-	/// assert_ulps_ne!(boost_vcu, boost_u * boost_v);
-	/// assert_ulps_eq!(rotation_ucv * boost_ucv, boost_v * boost_u);
-	/// assert_ulps_eq!(boost_vcu * rotation_ucv, boost_v * boost_u);
-	/// ```
-	#[must_use]
-	pub fn rotation(&self, frame: &Self) -> Matrix4<N>
-	where
-		N::Element: SimdRealField,
-		DefaultAllocator: Allocator<N, D, D>,
-	{
-		let mut m = Matrix4::<N>::identity();
-		let (axis, angle) = self.axis_angle(frame);
-		let axis = axis.into_inner();
-		let axis = Unit::new_unchecked(Vector3::new(axis[0], axis[1], axis[2]));
-		let r = Rotation3::from_axis_angle(&axis, angle);
-		let (rows, cols) = m.shape_generic();
-		m.generic_view_mut((1, 1), (rows.sub(U1), cols.sub(U1)))
-			.copy_from(r.matrix());
-		m
 	}
 }
 

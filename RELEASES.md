@@ -1,3 +1,8 @@
+# Version 0.4.0 (2024-02-27)
+
+  * Make Wigner rotation n-dimensional.
+  * Negate `FrameN` axis instead of beta.
+
 # Version 0.3.0 (2024-02-21)
 
   * Update dependencies.

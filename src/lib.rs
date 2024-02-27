@@ -1149,7 +1149,7 @@ where
 
 	#[inline]
 	fn neg(mut self) -> Self::Output {
-		self.zeta_sinh = -self.zeta_sinh;
+		self.axis = -self.axis;
 		self
 	}
 }
@@ -1165,6 +1165,20 @@ where
 	#[inline]
 	fn add(self, rhs: Self) -> Self::Output {
 		self.compose(&rhs)
+	}
+}
+
+impl<N, D> Sub for FrameN<N, D>
+where
+	N: SimdRealField + Signed + Real,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, DimNameDiff<D, U1>> + Allocator<N, D>,
+{
+	type Output = Self;
+
+	#[inline]
+	fn sub(self, rhs: Self) -> Self::Output {
+		self.compose(&-rhs)
 	}
 }
 
@@ -1317,6 +1331,21 @@ where
 	#[inline]
 	fn from(momentum: MomentumN<N, D>) -> Self {
 		momentum.momentum
+	}
+}
+
+impl<N, D> Neg for MomentumN<N, D>
+where
+	N: SimdRealField + Signed + Real,
+	D: DimNameSub<U1>,
+	DefaultAllocator: Allocator<N, D>,
+{
+	type Output = Self;
+
+	#[inline]
+	fn neg(mut self) -> Self::Output {
+		self.momentum = -self.momentum;
+		self
 	}
 }
 

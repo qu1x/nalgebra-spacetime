@@ -247,8 +247,8 @@ where
 
 	/// $
 	/// \gdef \uk {\hat u \cdot \vec K}
-	/// \gdef \Lmu {\Lambda^{\mu'}\_{\phantom {\mu'} \mu}}
-	/// \gdef \Lnu {(\Lambda^T)\_\nu^{\phantom \nu \nu'}}
+	/// \gdef \Lmu {\Lambda^{\mu\'}\_{\phantom {\mu\'} \mu}}
+	/// \gdef \Lnu {(\Lambda^T)\_\nu^{\phantom \nu \nu\'}}
 	/// $
 	/// Lorentz transformation $\Lmu(\hat u, \zeta)$ boosting degree-1/degree-2 tensors to inertial
 	/// `frame` of reference.
@@ -271,14 +271,14 @@ where
 	/// Boosts degree-1 tensors by multiplying it from the left:
 	///
 	/// $$
-	/// x^{\mu'} = \Lmu x^\mu
+	/// x^{\mu\'} = \Lmu x^\mu
 	/// $$
 	///
 	/// Boosts degree-2 tensors by multiplying it from the left and its transpose (symmetric for
 	/// pure boosts) from the right:
 	///
 	/// $$
-	/// F^{\mu' \nu'} = \Lmu F^{\mu \nu} \Lnu
+	/// F^{\mu\' \nu\'} = \Lmu F^{\mu \nu} \Lnu
 	/// $$
 	///
 	/// ```
@@ -335,7 +335,7 @@ where
 	/// \begin{pmatrix}
 	/// x^0 \\\\
 	/// \vec x
-	/// \end{pmatrix}' = \begin{pmatrix}
+	/// \end{pmatrix}\' = \begin{pmatrix}
 	/// x^0 \cosh \zeta - \xu \sinh \zeta \\\\
 	/// \vec x + (\xu (\cosh \zeta - 1) - x^0 \sinh \zeta) \hat u
 	/// \end{pmatrix}
@@ -1018,14 +1018,14 @@ where
 	}
 
 	/// $
-	/// \gdef \Bu {B^{\mu'}\_{\phantom {\mu'} \mu} (\vec \beta_u)}
-	/// \gdef \Bv {B^{\mu''}\_{\phantom {\mu''} \mu'} (\vec \beta_v)}
+	/// \gdef \Bu {B^{\mu\'}\_{\phantom {\mu\'} \mu} (\vec \beta_u)}
+	/// \gdef \Bv {B^{\mu\'\'}\_{\phantom {\mu\'\'} \mu\'} (\vec \beta_v)}
 	/// \gdef \Puv {u \oplus v}
-	/// \gdef \Buv {B^{\mu'}\_{\phantom {\mu'} \mu} (\vec \beta_{\Puv})}
-	/// \gdef \Ruv {R^{\mu''}\_{\phantom {\mu''} \mu'} (\epsilon)}
+	/// \gdef \Buv {B^{\mu\'}\_{\phantom {\mu\'} \mu} (\vec \beta_{\Puv})}
+	/// \gdef \Ruv {R^{\mu\'\'}\_{\phantom {\mu\'\'} \mu\'} (\epsilon)}
 	/// \gdef \R {R (\epsilon)}
 	/// \gdef \Kuv {K(\epsilon)}
-	/// \gdef \Luv {\Lambda^{\mu''}\_{\phantom {\mu''} \mu} (\vec \beta_{\Puv})}
+	/// \gdef \Luv {\Lambda^{\mu\'\'}\_{\phantom {\mu\'\'} \mu} (\vec \beta_{\Puv})}
 	/// $
 	/// Wigner rotation matrix $R(\widehat {\vec \beta_u \wedge \vec \beta_v}, \epsilon)$ of the
 	/// boost composition `self`$\oplus$`frame`.

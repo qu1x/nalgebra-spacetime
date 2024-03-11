@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra-spacetime"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Rouven Spreckels <rs@qu1x.dev>"]
 edition = "2021"
 description = "Spacetime Extension for nalgebra"
@@ -34,4 +34,3 @@ rustdoc-args = [ "--html-in-header", "katex.html" ]
 [dependencies]
 approx = { version = "0.5.1", default-features = false }
 nalgebra = { version = "0.32.4", features = ["rand"] }
-num-traits = "0.2.18"

@@ -20,11 +20,11 @@ Spacetime Extension for [nalgebra]
 
 # Present Features
 
-  * Minkowski space as special case of `LorentzianN` space.
+  * Minkowski space as special case of n-dimensional `Lorentzian` space.
   * Raising/Lowering tensor indices: `dual()`/`r_dual()`/`c_dual()`.
   * Metric contraction of degree-1/degree-2 tensors: `contr()`/`scalar()`.
   * Spacetime `interval()` with `LightCone` depiction.
-  * Inertial `FrameN` of reference holding boost parameters.
+  * Inertial `OFrame` of reference holding boost parameters.
   * Lorentz boost as `new_boost()` matrix.
   * Direct Lorentz `boost()` to `compose()` velocities.
   * Wigner `rotation()` and `axis_angle()` between to-be-composed boosts.

@@ -1,3 +1,7 @@
+# Version 0.6.0 (2024-10-11)
+
+  * Update `nalgebra`.
+
 # Version 0.5.0 (2024-03-11)
 
   * Replace `N: SimdRealField + Signed + Real` with `T: RealField`.

@@ -157,7 +157,7 @@ where
 		C2: Dim,
 		SB: Storage<T, R2, C2>,
 		ShapeConstraint: AreMultipliable<R, C, R2, C2>,
-		DefaultAllocator: Allocator<T, R, C2>;
+		DefaultAllocator: Allocator<R, C2>;
 
 	/// Same as [`Self::contr`] but with transposed tensor indices.
 	///
@@ -170,7 +170,7 @@ where
 		C2: Dim,
 		SB: Storage<T, R2, C2>,
 		ShapeConstraint: SameNumberOfRows<R, R2>,
-		DefaultAllocator: Allocator<T, C, C2>;
+		DefaultAllocator: Allocator<C, C2>;
 
 	/// Lorentzian inner product of degree-1/degree-2 tensors.
 	///
@@ -303,7 +303,7 @@ where
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: AreMultipliable<R, C, R, C> + DimEq<R, D>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>;
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>;
 
 	/// Boosts this degree-1 tensor $x^\mu$ to inertial `frame` of reference along $\hat u$ with
 	/// $\zeta$.
@@ -330,7 +330,7 @@ where
 			+ SameNumberOfColumns<C, U1>
 			+ DimEq<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>
 			+ SameNumberOfRows<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>;
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>;
 
 	/// $
 	/// \gdef \xu {(\vec x \cdot \hat u)}
@@ -377,7 +377,7 @@ where
 			+ SameNumberOfColumns<C, U1>
 			+ DimEq<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>
 			+ SameNumberOfRows<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>;
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>;
 
 	/// Velocity $u^\mu$ of inertial `frame` of reference.
 	#[must_use]
@@ -385,7 +385,7 @@ where
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>> + Allocator<T, D>;
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>> + Allocator<D>;
 
 	/// Inertial frame of reference of this velocity $u^\mu$.
 	#[must_use]
@@ -393,7 +393,7 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<T, DimNameDiff<R, U1>>;
+		DefaultAllocator: Allocator<DimNameDiff<R, U1>>;
 
 	/// From `temporal` and `spatial` spacetime split.
 	#[must_use]
@@ -401,8 +401,8 @@ where
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>> + Allocator<T, D>,
-		<DefaultAllocator as Allocator<T, D, U1>>::Buffer:
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>> + Allocator<D>,
+		<DefaultAllocator as Allocator<D, U1>>::Buffer<T>:
 			StorageMut<T, D, U1, RStride = U1, CStride = D>;
 
 	/// Spacetime split into [`Self::temporal`] and [`Self::spatial`].
@@ -411,8 +411,8 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
-		DefaultAllocator: Allocator<T, R, C>,
-		<DefaultAllocator as Allocator<T, R, C>>::Buffer:
+		DefaultAllocator: Allocator<R, C>,
+		<DefaultAllocator as Allocator<R, C>>::Buffer<T>:
 			Storage<T, R, C, RStride = U1, CStride = R>;
 
 	/// Mutable spacetime split into [`Self::temporal_mut`] and
@@ -435,8 +435,8 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
-		DefaultAllocator: Allocator<T, R, C>,
-		<DefaultAllocator as Allocator<T, R, C>>::Buffer:
+		DefaultAllocator: Allocator<R, C>,
+		<DefaultAllocator as Allocator<R, C>>::Buffer<T>:
 			Storage<T, R, C, RStride = U1, CStride = R>;
 
 	/// Temporal component.
@@ -458,8 +458,8 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
-		DefaultAllocator: Allocator<T, R, C>,
-		<DefaultAllocator as Allocator<T, R, C>>::Buffer:
+		DefaultAllocator: Allocator<R, C>,
+		<DefaultAllocator as Allocator<R, C>>::Buffer<T>:
 			Storage<T, R, C, RStride = U1, CStride = R>;
 
 	/// Mutable spatial components.
@@ -467,8 +467,8 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
-		DefaultAllocator: Allocator<T, R, C>,
-		<DefaultAllocator as Allocator<T, R, C>>::Buffer:
+		DefaultAllocator: Allocator<R, C>,
+		<DefaultAllocator as Allocator<R, C>>::Buffer<T>:
 			StorageMut<T, R, C, RStride = U1, CStride = R>;
 }
 
@@ -477,7 +477,7 @@ where
 	T: RealField,
 	R: DimName + DimNameSub<U1>,
 	C: DimName + DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, R, C>,
+	DefaultAllocator: Allocator<R, C>,
 {
 	#[inline]
 	fn metric() -> Self
@@ -550,7 +550,7 @@ where
 		C2: Dim,
 		SB: Storage<T, R2, C2>,
 		ShapeConstraint: AreMultipliable<R, C, R2, C2>,
-		DefaultAllocator: Allocator<T, R, C2>,
+		DefaultAllocator: Allocator<R, C2>,
 	{
 		self.c_dual() * rhs
 	}
@@ -562,7 +562,7 @@ where
 		C2: Dim,
 		SB: Storage<T, R2, C2>,
 		ShapeConstraint: SameNumberOfRows<R, R2>,
-		DefaultAllocator: Allocator<T, C, C2>,
+		DefaultAllocator: Allocator<C, C2>,
 	{
 		self.r_dual().tr_mul(rhs)
 	}
@@ -643,7 +643,7 @@ where
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: AreMultipliable<R, C, R, C> + DimEq<R, D>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 	{
 		let OFrame {
 			zeta_cosh,
@@ -672,7 +672,7 @@ where
 			+ SameNumberOfColumns<C, U1>
 			+ DimEq<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>
 			+ SameNumberOfRows<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 	{
 		let mut v = self.clone_owned();
 		v.boost_mut(frame);
@@ -687,7 +687,7 @@ where
 			+ SameNumberOfColumns<C, U1>
 			+ DimEq<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>
 			+ SameNumberOfRows<<R as DimNameSub<U1>>::Output, <D as DimNameSub<U1>>::Output>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 	{
 		let OFrame {
 			zeta_cosh,
@@ -708,7 +708,7 @@ where
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>> + Allocator<T, D>,
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>> + Allocator<D>,
 	{
 		frame.velocity()
 	}
@@ -718,7 +718,7 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<T, DimNameDiff<R, U1>>,
+		DefaultAllocator: Allocator<DimNameDiff<R, U1>>,
 	{
 		OFrame::<T, R>::from_velocity(self)
 	}
@@ -728,8 +728,8 @@ where
 	where
 		D: DimNameSub<U1>,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>> + Allocator<T, D>,
-		<DefaultAllocator as Allocator<T, D, U1>>::Buffer:
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>> + Allocator<D>,
+		<DefaultAllocator as Allocator<D, U1>>::Buffer<T>:
 			StorageMut<T, D, U1, RStride = U1, CStride = D>,
 	{
 		let mut v = OVector::<T, D>::zeros();
@@ -743,8 +743,8 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
-		DefaultAllocator: Allocator<T, R, C>,
-		<DefaultAllocator as Allocator<T, R, C>>::Buffer:
+		DefaultAllocator: Allocator<R, C>,
+		<DefaultAllocator as Allocator<R, C>>::Buffer<T>:
 			Storage<T, R, C, RStride = U1, CStride = R>,
 	{
 		(self.temporal(), self.spatial())
@@ -755,8 +755,8 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
-		DefaultAllocator: Allocator<T, R, C>,
-		<DefaultAllocator as Allocator<T, R, C>>::Buffer:
+		DefaultAllocator: Allocator<R, C>,
+		<DefaultAllocator as Allocator<R, C>>::Buffer<T>:
 			Storage<T, R, C, RStride = U1, CStride = R>,
 	{
 		let (temporal, spatial) = self.as_mut_slice().split_at_mut(1);
@@ -789,7 +789,7 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
-		<DefaultAllocator as Allocator<T, R, C>>::Buffer:
+		<DefaultAllocator as Allocator<R, C>>::Buffer<T>:
 			RawStorage<T, R, C, RStride = U1, CStride = R>,
 	{
 		let (rows, _cols) = self.shape_generic();
@@ -801,7 +801,7 @@ where
 	where
 		R: DimNameSub<U1>,
 		ShapeConstraint: DimEq<U1, C>,
-		<DefaultAllocator as Allocator<T, R, C>>::Buffer:
+		<DefaultAllocator as Allocator<R, C>>::Buffer<T>:
 			RawStorageMut<T, R, C, RStride = U1, CStride = R>,
 	{
 		let (rows, _cols) = self.shape_generic();
@@ -862,7 +862,7 @@ pub struct OFrame<T, D>
 where
 	T: Scalar,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+	DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 {
 	zeta_cosh: T,
 	zeta_sinh: T,
@@ -873,7 +873,7 @@ impl<T, D> OFrame<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+	DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 {
 	/// Inertial frame of reference with velocity $u^\mu$.
 	#[must_use]
@@ -882,7 +882,7 @@ where
 		R: DimNameSub<U1>,
 		C: Dim,
 		ShapeConstraint: SameNumberOfRows<R, D> + SameNumberOfColumns<C, U1>,
-		DefaultAllocator: Allocator<T, R, C>,
+		DefaultAllocator: Allocator<R, C>,
 	{
 		let mut scaled_axis = OVector::zeros();
 		let zeta_cosh = u[0].clone();
@@ -946,7 +946,7 @@ where
 	#[must_use]
 	pub fn velocity(&self) -> OVector<T, D>
 	where
-		DefaultAllocator: Allocator<T, D>,
+		DefaultAllocator: Allocator<D>,
 	{
 		let mut u = OVector::<T, D>::zeros();
 		u[0] = self.gamma();
@@ -1000,7 +1000,7 @@ where
 	#[inline]
 	pub fn compose(&self, frame: &Self) -> Self
 	where
-		DefaultAllocator: Allocator<T, D>,
+		DefaultAllocator: Allocator<D>,
 	{
 		frame.velocity().boost(&-self.clone()).frame()
 	}
@@ -1017,7 +1017,7 @@ where
 	#[must_use]
 	pub fn angle(&self, frame: &Self) -> T
 	where
-		DefaultAllocator: Allocator<T, D>,
+		DefaultAllocator: Allocator<D>,
 	{
 		let (u, v) = (self, frame);
 		let ucv = u.compose(v).axis();
@@ -1096,10 +1096,10 @@ where
 	#[allow(clippy::similar_names, clippy::many_single_char_names)]
 	pub fn rotation(&self, frame: &Self) -> (OMatrix<T, D, D>, T)
 	where
-		DefaultAllocator: Allocator<T, D>
-			+ Allocator<T, U1, DimNameDiff<D, U1>>
-			+ Allocator<T, D, D>
-			+ Allocator<T, DimNameDiff<D, U1>, DimNameDiff<D, U1>>,
+		DefaultAllocator: Allocator<D>
+			+ Allocator<U1, DimNameDiff<D, U1>>
+			+ Allocator<D, D>
+			+ Allocator<DimNameDiff<D, U1>, DimNameDiff<D, U1>>,
 	{
 		let (u, v) = (self, frame);
 		let a = &u.compose(v).axis().into_inner();
@@ -1157,7 +1157,7 @@ where
 		T: RealField,
 		D: DimNameSub<U1>,
 		ShapeConstraint: DimEq<D, U4>,
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 	{
 		let (u, v) = (self, frame);
 		let (axis, sin) = Unit::new_and_get(u.axis().cross(&v.axis()));
@@ -1178,7 +1178,7 @@ where
 	R: DimNameSub<U1>,
 	C: DimNameSub<U1>,
 	ShapeConstraint: SameNumberOfColumns<C, U1>,
-	DefaultAllocator: Allocator<T, R, C> + Allocator<T, DimNameDiff<R, U1>>,
+	DefaultAllocator: Allocator<R, C> + Allocator<DimNameDiff<R, U1>>,
 {
 	#[inline]
 	fn from(u: OMatrix<T, R, C>) -> Self {
@@ -1190,7 +1190,7 @@ impl<T, D> From<OFrame<T, D>> for OVector<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, DimNameDiff<D, U1>> + Allocator<T, D>,
+	DefaultAllocator: Allocator<DimNameDiff<D, U1>> + Allocator<D>,
 {
 	#[inline]
 	fn from(frame: OFrame<T, D>) -> Self {
@@ -1202,7 +1202,7 @@ impl<T, D> Neg for OFrame<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+	DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 {
 	type Output = Self;
 
@@ -1217,7 +1217,7 @@ impl<T, D> Add for OFrame<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, DimNameDiff<D, U1>> + Allocator<T, D>,
+	DefaultAllocator: Allocator<DimNameDiff<D, U1>> + Allocator<D>,
 {
 	type Output = Self;
 
@@ -1231,7 +1231,7 @@ impl<T, D> Sub for OFrame<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, DimNameDiff<D, U1>> + Allocator<T, D>,
+	DefaultAllocator: Allocator<DimNameDiff<D, U1>> + Allocator<D>,
 {
 	type Output = Self;
 
@@ -1245,7 +1245,7 @@ impl<T, D> Copy for OFrame<T, D>
 where
 	T: RealField + Copy,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+	DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 	Owned<T, DimNameDiff<D, U1>>: Copy,
 {
 }
@@ -1277,7 +1277,7 @@ pub struct OMomentum<T, D>
 where
 	T: Scalar,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, D>,
+	DefaultAllocator: Allocator<D>,
 {
 	momentum: OVector<T, D>,
 }
@@ -1286,7 +1286,7 @@ impl<T, D> OMomentum<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, D>,
+	DefaultAllocator: Allocator<D>,
 {
 	/// Momentum with spacetime [`Lorentzian::split`], `energy` $E$ and
 	/// `momentum` $\vec p$.
@@ -1294,8 +1294,8 @@ where
 	#[inline]
 	pub fn from_split(energy: &T, momentum: &OVector<T, DimNameDiff<D, U1>>) -> Self
 	where
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
-		<DefaultAllocator as Allocator<T, D, U1>>::Buffer:
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
+		<DefaultAllocator as Allocator<D, U1>>::Buffer<T>:
 			StorageMut<T, D, U1, RStride = U1, CStride = D>,
 	{
 		Self {
@@ -1308,7 +1308,7 @@ where
 	#[inline]
 	pub fn from_mass_at_velocity(mass: T, velocity: OVector<T, D>) -> Self
 	where
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 	{
 		Self {
 			momentum: velocity * mass,
@@ -1322,7 +1322,7 @@ where
 	#[inline]
 	pub fn from_mass_in_frame(mass: T, frame: &OFrame<T, D>) -> Self
 	where
-		DefaultAllocator: Allocator<T, DimNameDiff<D, U1>>,
+		DefaultAllocator: Allocator<DimNameDiff<D, U1>>,
 	{
 		Self::from_mass_at_velocity(mass, frame.velocity())
 	}
@@ -1362,8 +1362,8 @@ where
 	#[inline]
 	pub fn momentum(&self) -> VectorView<T, DimNameDiff<D, U1>, U1, D>
 	where
-		DefaultAllocator: Allocator<T, D, U1>,
-		<DefaultAllocator as Allocator<T, D, U1>>::Buffer:
+		DefaultAllocator: Allocator<D, U1>,
+		<DefaultAllocator as Allocator<D, U1>>::Buffer<T>:
 			Storage<T, D, U1, RStride = U1, CStride = D>,
 	{
 		self.momentum.spatial()
@@ -1374,7 +1374,7 @@ impl<T, D> From<OVector<T, D>> for OMomentum<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, D>,
+	DefaultAllocator: Allocator<D>,
 {
 	#[inline]
 	fn from(momentum: OVector<T, D>) -> Self {
@@ -1386,7 +1386,7 @@ impl<T, D> From<OMomentum<T, D>> for OVector<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, D>,
+	DefaultAllocator: Allocator<D>,
 {
 	#[inline]
 	fn from(momentum: OMomentum<T, D>) -> Self {
@@ -1398,7 +1398,7 @@ impl<T, D> Neg for OMomentum<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, D>,
+	DefaultAllocator: Allocator<D>,
 {
 	type Output = Self;
 
@@ -1413,7 +1413,7 @@ impl<T, D> Add<Self> for OMomentum<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, D>,
+	DefaultAllocator: Allocator<D>,
 {
 	type Output = Self;
 
@@ -1429,7 +1429,7 @@ impl<T, D> Sub<Self> for OMomentum<T, D>
 where
 	T: RealField,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, D>,
+	DefaultAllocator: Allocator<D>,
 {
 	type Output = Self;
 
@@ -1445,7 +1445,7 @@ impl<T, D> Copy for OMomentum<T, D>
 where
 	T: RealField + Copy,
 	D: DimNameSub<U1>,
-	DefaultAllocator: Allocator<T, D>,
+	DefaultAllocator: Allocator<D>,
 	Owned<T, D>: Copy,
 {
 }

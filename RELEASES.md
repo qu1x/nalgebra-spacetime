@@ -1,6 +1,6 @@
 # Version 0.6.0 (2024-10-11)
 
-  * Update `nalgebra`.
+  * Update `nalgebra` and `katex`.
 
 # Version 0.5.0 (2024-03-11)
 

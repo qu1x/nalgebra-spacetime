@@ -1,14 +1,11 @@
-# Version 0.6.0 (2024-10-11)
-
-  * Update `nalgebra` and `katex`.
-
-# Version 0.5.0 (2024-03-11)
+# Version 0.5.0 (2024-10-11)
 
   * Replace `N: SimdRealField + Signed + Real` with `T: RealField`.
   * Rename `LorentzianN` to `Lorentzian`.
   * Rename `FrameN` to `OFrame`.
   * Rename `MomentumN` to `OMomentum`.
   * Make `OFrame::rotation()` robust close to identity.
+  * Update `nalgebra` and `katex`.
 
 # Version 0.4.0 (2024-02-27)
 
